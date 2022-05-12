@@ -3,6 +3,8 @@ SDL
 
 Get the GraphQL SDL from Twisp to use in generating api clients.
 
+## Usage
+
 ```
 Usage of sdl:
   -account string
@@ -18,7 +20,7 @@ Usage of sdl:
 ```
 
 
-Examples:
+## Examples
 
 With an IAM credential in the environment:
 ```
