@@ -50,21 +50,54 @@ func (v *checkBalanceResponse) GetBalances_account() []checkBalanceBalances_acco
 	return v.Balances_account
 }
 
+// insertTransactionResponse is returned by insertTransaction on success.
+type insertTransactionResponse struct {
+	Transactions insertTransactionTransactionsMutations_transactions_all `json:"transactions"`
+}
+
+// GetTransactions returns insertTransactionResponse.Transactions, and is useful for accessing the field via an interface.
+func (v *insertTransactionResponse) GetTransactions() insertTransactionTransactionsMutations_transactions_all {
+	return v.Transactions
+}
+
+// insertTransactionTransactionsMutations_transactions_all includes the requested fields of the GraphQL type mutations_transactions_all.
+type insertTransactionTransactionsMutations_transactions_all struct {
+	Insert insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_output `json:"insert"`
+}
+
+// GetInsert returns insertTransactionTransactionsMutations_transactions_all.Insert, and is useful for accessing the field via an interface.
+func (v *insertTransactionTransactionsMutations_transactions_all) GetInsert() insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_output {
+	return v.Insert
+}
+
+// insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_output includes the requested fields of the GraphQL type mutations_transactions_insert_output.
+type insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_output struct {
+	Record insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions `json:"record"`
+}
+
+// GetRecord returns insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_output.Record, and is useful for accessing the field via an interface.
+func (v *insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_output) GetRecord() insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions {
+	return v.Record
+}
+
+// insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions includes the requested fields of the GraphQL type transactions.
+type insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions struct {
+	Transaction_id string `json:"transaction_id"`
+}
+
+// GetTransaction_id returns insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions.Transaction_id, and is useful for accessing the field via an interface.
+func (v *insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions) GetTransaction_id() string {
+	return v.Transaction_id
+}
+
 func checkBalance(
 	ctx context.Context,
 	client graphql.Client,
 	accountID string,
 ) (*checkBalanceResponse, error) {
-	__input := __checkBalanceInput{
-		AccountID: accountID,
-	}
-	var err error
-
-	var retval checkBalanceResponse
-	err = client.MakeRequest(
-		ctx,
-		"checkBalance",
-		`
+	req := &graphql.Request{
+		OpName: "checkBalance",
+		Query: `
 query checkBalance ($accountID: String) {
 	balances_account(index: account_id, where: {partition:[$accountID]}) {
 		account_id
@@ -75,8 +108,52 @@ query checkBalance ($accountID: String) {
 	}
 }
 `,
-		&retval,
-		&__input,
+		Variables: &__checkBalanceInput{
+			AccountID: accountID,
+		},
+	}
+	var err error
+
+	var data checkBalanceResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
 	)
-	return &retval, err
+
+	return &data, err
+}
+
+func insertTransaction(
+	ctx context.Context,
+	client graphql.Client,
+) (*insertTransactionResponse, error) {
+	req := &graphql.Request{
+		OpName: "insertTransaction",
+		Query: `
+mutation insertTransaction {
+	transactions {
+		insert(input: {document:{transaction_id:"uuid.New()",correlation_id:"uuid(context.vars.correlation_id)",account_id:"uuid(context.vars.account.account_id)",operating_account_id:"uuid(context.vars.settlement_account.account_id)",tran_code_id:"int(context.vars.tran_code_id)",journal_id:"int(context.vars.journal_id)",layer_id:"int(context.vars.layer_id)",credit:"context.vars.credit",amount:"int(context.vars.amount)",effective:"date(context.vars.effective)",created:"timestamp(context.vars.created)"}}) {
+			record {
+				transaction_id
+			}
+		}
+	}
+}
+`,
+	}
+	var err error
+
+	var data insertTransactionResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
 }

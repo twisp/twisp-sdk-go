@@ -10,3 +10,29 @@ query checkBalance($accountID: String) {
     dr_balance
   }
 }
+
+mutation insertTransaction {
+  transactions {
+    insert(
+      input: {
+        document: {
+          transaction_id: "uuid.New()",
+          correlation_id: "uuid(context.vars.correlation_id)",
+          account_id: "uuid(context.vars.account.account_id)",
+          operating_account_id: "uuid(context.vars.settlement_account.account_id)",
+          tran_code_id: "int(context.vars.tran_code_id)",
+          journal_id: "int(context.vars.journal_id)",
+          layer_id: "int(context.vars.layer_id)",
+          credit: "context.vars.credit",
+          amount: "int(context.vars.amount)"
+          effective: "date(context.vars.effective)",
+          created: "timestamp(context.vars.created)",
+        }
+      }
+    ) {
+      record {
+        transaction_id
+      }
+    }
+  }
+} 

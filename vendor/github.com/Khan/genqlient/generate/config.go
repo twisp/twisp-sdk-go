@@ -1,9 +1,8 @@
 package generate
 
 import (
+	_ "embed"
 	"go/token"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -28,6 +27,7 @@ type Config struct {
 	ClientGetter     string                  `yaml:"client_getter"`
 	Bindings         map[string]*TypeBinding `yaml:"bindings"`
 	StructReferences bool                    `yaml:"use_struct_references"`
+	Extensions       bool                    `yaml:"use_extensions"`
 
 	// Set to true to use features that aren't fully ready to use.
 	//
@@ -51,6 +51,16 @@ type TypeBinding struct {
 	Unmarshaler       string `yaml:"unmarshaler"`
 }
 
+// pathJoin is like filepath.Join but 1) it only takes two argsuments,
+// and b) if the second argument is an absolute path the first argument
+// is ignored (similar to how python's os.path.join() works).
+func pathJoin(a, b string) string {
+	if filepath.IsAbs(b) {
+		return b
+	}
+	return filepath.Join(a, b)
+}
+
 // ValidateAndFillDefaults ensures that the configuration is valid, and fills
 // in any options that were unspecified.
 //
@@ -59,14 +69,14 @@ type TypeBinding struct {
 func (c *Config) ValidateAndFillDefaults(baseDir string) error {
 	c.baseDir = baseDir
 	for i := range c.Schema {
-		c.Schema[i] = filepath.Join(baseDir, c.Schema[i])
+		c.Schema[i] = pathJoin(baseDir, c.Schema[i])
 	}
 	for i := range c.Operations {
-		c.Operations[i] = filepath.Join(baseDir, c.Operations[i])
+		c.Operations[i] = pathJoin(baseDir, c.Operations[i])
 	}
-	c.Generated = filepath.Join(baseDir, c.Generated)
+	c.Generated = pathJoin(baseDir, c.Generated)
 	if c.ExportOperations != "" {
-		c.ExportOperations = filepath.Join(baseDir, c.ExportOperations)
+		c.ExportOperations = pathJoin(baseDir, c.ExportOperations)
 	}
 
 	if c.ContextType == "" {
@@ -93,7 +103,7 @@ func (c *Config) ValidateAndFillDefaults(baseDir string) error {
 // ReadAndValidateConfig reads the configuration from the given file, validates
 // it, and returns it.
 func ReadAndValidateConfig(filename string) (*Config, error) {
-	text, err := ioutil.ReadFile(filename)
+	text, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, errorf(nil, "unreadable config file %v: %v", filename, err)
 	}
@@ -123,22 +133,11 @@ func ReadAndValidateConfigFromDefaultLocations() (*Config, error) {
 	return ReadAndValidateConfig(cfgFile)
 }
 
+//go:embed default_genqlient.yaml
+var defaultConfig []byte
+
 func initConfig(filename string) error {
-	// TODO(benkraft): Embed this config file into the binary, see
-	// https://github.com/Khan/genqlient/issues/9.
-	r, err := os.Open(filepath.Join(thisDir, "default_genqlient.yaml"))
-	if err != nil {
-		return err
-	}
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
-	if err != nil {
-		return errorf(nil, "unable to write default genqlient.yaml: %v", err)
-	}
-	_, err = io.Copy(w, r)
-	if err != nil {
-		return errorf(nil, "unable to write default genqlient.yaml: %v", err)
-	}
-	return nil
+	return os.WriteFile(filename, defaultConfig, 0o644)
 }
 
 // findCfg searches for the config file in this directory and all parents up the tree
@@ -165,7 +164,7 @@ func findCfg() (string, error) {
 
 func findCfgInDir(dir string) string {
 	for _, cfgName := range cfgFilenames {
-		path := filepath.Join(dir, cfgName)
+		path := pathJoin(dir, cfgName)
 		if _, err := os.Stat(path); err == nil {
 			return path
 		}

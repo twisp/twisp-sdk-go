@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/Khan/genqlient/graphql"
 	"github.com/twisp/twisp-sdk-go/pkg/client"
 	"github.com/twisp/twisp-sdk-go/pkg/token"
 )
@@ -50,12 +49,56 @@ func main() {
 		authorization = customerJWT
 	}
 
-	graphqlClient := graphql.NewClient(graphqlURL, client.NewTwispClient(authorization, customerAccount))
+	twispHTTP := client.NewTwispHttp(authorization, customerAccount)
 
-	resp, err := checkBalance(context.Background(), graphqlClient, "c9956621-2209-4d0d-bec0-52107fe833fd")
-
+	// Check a balance
+	graphqlClient := client.NewTwispClient(graphqlURL, nil, twispHTTP)
+	resp, err := checkBalance(
+		context.Background(),
+		graphqlClient,
+		"c9956621-2209-4d0d-bec0-52107fe833fd",
+	)
 	handle(err)
-	b, err := json.Marshal(resp)
+	PrintJSON(resp)
+
+	//Insert a transaction
+	var transactionJSON = `
+{
+	"account": {
+		"account_id": "c9956621-2209-4d0d-bec0-52107fe833fd",
+		"status": "OPEN",
+		"account_type": "DDA"
+	},
+	"settlement_account": {
+		"account_id": "79109baf-f687-4ccb-b797-c132d64adf36",
+		"status": "OPEN",
+		"account_type": "GL"
+	},
+	"transaction_id": "c81505af-f6a2-46cb-8057-7b1f0af3548c",
+	"correlation_id": "e7cee9e7-ab07-4030-a470-d3ab05a5fd67",
+	"tran_code_id": 3,
+	"journal_id": 1,
+	"layer_id": 1,
+	"effective": "2022-03-20",
+	"created": "2022-03-20T16:25:11.000Z",
+	"credit": false,
+	"amount": 800
+}`
+	var variables map[string]interface{}
+	handle(json.Unmarshal([]byte(transactionJSON), &variables))
+
+	graphqlClient = client.NewTwispClient(graphqlURL, variables, twispHTTP)
+	txResp, err := insertTransaction(
+		context.Background(),
+		graphqlClient,
+	)
+	handle(err)
+	PrintJSON(txResp)
+
+}
+
+func PrintJSON(obj any) {
+	b, err := json.Marshal(obj)
 	handle(err)
 	fmt.Printf("%v\n", string(b))
 }
