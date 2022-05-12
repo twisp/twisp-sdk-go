@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/twisp/twisp-sdk-go/pkg/client"
 	"github.com/twisp/twisp-sdk-go/pkg/token"
 )
 
@@ -19,7 +20,7 @@ var (
 	customerJWT     = ""
 	customerAccount = ""
 	schemaOut       = ""
-	client          = http.DefaultClient
+	c               *http.Client
 )
 
 func main() {
@@ -59,6 +60,8 @@ func main() {
 		authorization = []byte(customerJWT)
 	}
 
+	c = client.NewTwispClient(string(authorization), customerAccount)
+
 	q := Query{
 		Query:         `{ _service { sdl } }`,
 		Variables:     map[string]any{},
@@ -77,7 +80,7 @@ func main() {
 		req.Header.Add("x-twisp-account-id", customerAccount)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	handle(err)
 	defer resp.Body.Close()
 
