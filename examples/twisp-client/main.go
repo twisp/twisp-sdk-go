@@ -14,12 +14,16 @@ import (
 )
 
 type authedTransport struct {
-	jwt     string
-	wrapped http.RoundTripper
+	jwt             string
+	xtwispAccountID string
+	wrapped         http.RoundTripper
 }
 
 func (t *authedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.jwt))
+	if t.xtwispAccountID != "" {
+		req.Header.Set("X-Twisp-Account-Id", t.xtwispAccountID)
+	}
 	return t.wrapped.RoundTrip(req)
 }
 
@@ -62,8 +66,9 @@ func main() {
 
 	httpClient := http.Client{
 		Transport: &authedTransport{
-			jwt:     authorization,
-			wrapped: http.DefaultTransport,
+			jwt:             authorization,
+			xtwispAccountID: customerAccount,
+			wrapped:         http.DefaultTransport,
 		},
 	}
 
