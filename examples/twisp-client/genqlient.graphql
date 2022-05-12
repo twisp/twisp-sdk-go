@@ -1,0 +1,12 @@
+query checkBalance($accountID: String) {
+  balances_account(
+    index: account_id,
+    where: { partition: [$accountID]}
+  ) {
+    account_id
+    journal_id
+    layer_id
+    cr_balance
+    dr_balance
+  }
+}

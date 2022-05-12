@@ -1,0 +1,760 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type mutations_transactions_all {
+    delete(input: mutations_transactions_delete): mutations_transactions_delete_output
+    insert(input: mutations_transactions_input): mutations_transactions_insert_output
+    reconcile(t: TransactionInput!): ReconciledTransaction
+    update(input: mutations_transactions_update): mutations_transactions_update_output
+}
+
+input mutations_customers_delete {
+    index: customers_indexes
+    where: Where
+    limit: Int32 = "1000"
+    scope: String
+}
+
+type mutations_cards_insert_output {
+    record: cards
+}
+
+type tran_codes {
+    account: [accounts]
+    credit: Boolean
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [tran_codes]
+    layer_id: Int64
+    layers: [layers]
+    offset_account_id: UUID
+    seq: Uint64
+    signum: Int64
+    tran_code: String
+    tran_code_id: Int64
+    tran_code_name: String
+}
+
+"Indexes for table customers"
+enum customers_indexes {
+    customer_id
+    email
+}
+
+"Indexes for table journals"
+enum journals_indexes {
+    journal_id
+}
+
+input mutations_layers_input {
+    document: mutations_expr_layers
+    scope: String
+}
+
+type mutations_journals_all {
+    delete(input: mutations_journals_delete): mutations_journals_delete_output
+    insert(input: mutations_journals_input): mutations_journals_insert_output
+    update(input: mutations_journals_update): mutations_journals_update_output
+}
+
+input mutations_expr_layers {
+    layer_id: Expression
+    layer: Expression
+}
+
+input mutations_accounts_update {
+    scope: String
+    index: accounts_indexes
+    where: Where
+    document: mutations_expr_accounts
+    limit: Int32 = "1000"
+}
+
+input mutations_tran_codes_delete {
+    where: Where
+    limit: Int32 = "1000"
+    scope: String
+    index: tran_codes_indexes
+}
+
+type mutations_transactions_insert_output {
+    record: transactions
+}
+
+input mutations_expr_tran_codes {
+    tran_code_name: Expression
+    credit: Expression
+    layer_id: Expression
+    offset_account_id: Expression
+    signum: Expression
+    tran_code: Expression
+    tran_code_id: Expression
+}
+
+input mutations_transactions_delete {
+    scope: String
+    index: transactions_indexes
+    where: Where
+    limit: Int32 = "1000"
+}
+
+type accounts {
+    account_customers: [customer_accounts]
+    account_id: UUID
+    account_type: String
+    balances_account: [balances_account]
+    created: Timestamp
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [accounts]
+    modified: Timestamp
+    seq: Uint64
+    status: String
+    transactions: [transactions]
+}
+
+input mutations_expr_customer_accounts {
+    account_id: Expression
+    created: Expression
+    customer_account_type: Expression
+    customer_id: Expression
+    modified: Expression
+    primary_account: Expression
+}
+
+input mutations_tran_codes_update {
+    where: Where
+    document: mutations_expr_tran_codes
+    limit: Int32 = "1000"
+    scope: String
+    index: tran_codes_indexes
+}
+
+input mutations_customers_update {
+    document: mutations_expr_customers
+    limit: Int32 = "1000"
+    scope: String
+    index: customers_indexes
+    where: Where
+}
+
+"A `Date` represents a year, month, and day"
+scalar Date
+
+"Indexes for table balances_account"
+enum balances_account_indexes {
+    account_journal_id
+    account_journal_layer_id
+    account_id
+}
+
+input mutations_customer_accounts_input {
+    scope: String
+    document: mutations_expr_customer_accounts
+}
+
+input mutations_journals_update {
+    where: Where
+    document: mutations_expr_journals
+    limit: Int32 = "1000"
+    scope: String
+    index: journals_indexes
+}
+
+input mutations_expr_balances_account {
+    account_id: Expression
+    cr_balance: Expression
+    dr_balance: Expression
+    journal_id: Expression
+    layer_id: Expression
+    transaction_id: Expression
+}
+
+type mutations_customer_accounts_delete_output {
+    records: [customer_accounts]
+}
+
+input mutations_expr_card_holders {
+    card_id: Expression
+    created: Expression
+    customer_id: Expression
+    account_id: Expression
+}
+
+type mutations_card_holders_delete_output {
+    records: [card_holders]
+}
+
+input mutations_journals_input {
+    scope: String
+    document: mutations_expr_journals
+}
+
+input mutations_expr_journals {
+    modified: Expression
+    status: Expression
+    created: Expression
+    journal_id: Expression
+    journal_name: Expression
+}
+
+type mutations_journals_insert_output {
+    record: journals
+}
+
+input mutations_card_holders_input {
+    scope: String
+    document: mutations_expr_card_holders
+}
+
+input TransactionInput {
+    correlation: String!
+}
+
+"Input object for index query filters."
+input Where {
+    gt: [String]
+    partition: [String]
+    lt: [String]
+    and: [String]
+    eq: [String]
+    startsWith: [String]
+    lte: [String]
+    gte: [String]
+    between: [String]
+}
+
+type layers {
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [layers]
+    layer: String
+    layer_id: Int64
+    seq: Uint64
+}
+
+input mutations_layers_update {
+    scope: String
+    index: layers_indexes
+    where: Where
+    document: mutations_expr_layers
+    limit: Int32 = "1000"
+}
+
+input mutations_accounts_delete {
+    scope: String
+    index: accounts_indexes
+    where: Where
+    limit: Int32 = "1000"
+}
+
+type customer_accounts {
+    account: [accounts]
+    account_id: UUID
+    created: Timestamp
+    customer_account_type: String
+    customer_id: UUID
+    customers: [customers]
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [customer_accounts]
+    modified: Timestamp
+    primary_account: Boolean
+    seq: Uint64
+}
+
+"Indexes for table cards"
+enum cards_indexes {
+    card_id
+}
+
+type mutations_customer_accounts_all {
+    delete(input: mutations_customer_accounts_delete): mutations_customer_accounts_delete_output
+    insert(input: mutations_customer_accounts_input): mutations_customer_accounts_insert_output
+    update(input: mutations_customer_accounts_update): mutations_customer_accounts_update_output
+}
+
+input mutations_cards_update {
+    scope: String
+    index: cards_indexes
+    where: Where
+    document: mutations_expr_cards
+    limit: Int32 = "1000"
+}
+
+input mutations_transactions_input {
+    scope: String
+    document: mutations_expr_transactions
+}
+
+input mutations_expr_customers {
+    modified: Expression
+    state: Expression
+    city: Expression
+    phone: Expression
+    status: Expression
+    country: Expression
+    surname: Expression
+    customer_id: Expression
+    ssn: Expression
+    postal_code: Expression
+    email: Expression
+    created: Expression
+    address2: Expression
+    address1: Expression
+    birthdate: Expression
+    forename: Expression
+}
+
+input mutations_customer_accounts_delete {
+    scope: String
+    index: customer_accounts_indexes
+    where: Where
+    limit: Int32 = "1000"
+}
+
+input mutations_card_holders_delete {
+    limit: Int32 = "1000"
+    scope: String
+    index: card_holders_indexes
+    where: Where
+}
+
+input mutations_card_holders_update {
+    limit: Int32 = "1000"
+    scope: String
+    index: card_holders_indexes
+    where: Where
+    document: mutations_expr_card_holders
+}
+
+type balances_account {
+    account_id: UUID
+    cr_balance: Int64
+    dr_balance: Int64
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [balances_account]
+    journal_id: Int64
+    layer_id: Int64
+    seq: Uint64
+    transaction_id: UUID
+}
+
+"Indexes for table customer_accounts"
+enum customer_accounts_indexes {
+    customer_account_id
+    customer_id
+    account_customer_id
+}
+
+"The `Expression` scalar type represents a Common Expression Language textual expression."
+scalar Expression
+
+type mutations_customers_all {
+    delete(input: mutations_customers_delete): mutations_customers_delete_output
+    insert(input: mutations_customers_input): mutations_customers_insert_output
+    update(input: mutations_customers_update): mutations_customers_update_output
+}
+
+input mutations_balances_account_update {
+    scope: String
+    index: balances_account_indexes
+    where: Where
+    document: mutations_expr_balances_account
+    limit: Int32 = "1000"
+}
+
+type mutations_customers_delete_output {
+    records: [customers]
+}
+
+type mutations_journals_delete_output {
+    records: [journals]
+}
+
+"Indexes for table card_holders"
+enum card_holders_indexes {
+    customer_id
+    account_id
+    card_id
+}
+
+type mutations_customer_accounts_update_output {
+    records: [customer_accounts]
+}
+
+type mutations_accounts_delete_output {
+    records: [accounts]
+}
+
+type mutations_card_holders_update_output {
+    records: [card_holders]
+}
+
+type Query {
+    accounts(scope: String, index: accounts_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [accounts]
+    balances_account(scope: String, index: balances_account_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [balances_account]
+    card_holders(index: card_holders_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000", scope: String): [card_holders]
+    cards(scope: String, index: cards_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [cards]
+    customer_accounts(scope: String, index: customer_accounts_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [customer_accounts]
+    customers(scope: String, index: customers_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [customers]
+    journals(index: journals_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000", scope: String): [journals]
+    layers(scope: String, index: layers_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [layers]
+    tran_codes(scope: String, index: tran_codes_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [tran_codes]
+    transactions(scope: String, index: transactions_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [transactions]
+}
+
+"A `Timestamp` represents a point in time independent of any time zone or calendar, represented as seconds and fractions of seconds at nanosecond resolution in UTC Epoch time."
+scalar Timestamp
+
+"Indexes for table tran_codes"
+enum tran_codes_indexes {
+    tran_code_id
+}
+
+type mutations_journals_update_output {
+    records: [journals]
+}
+
+input mutations_expr_cards {
+    card_delivery_type: Expression
+    card_holder_name: Expression
+    card_status: Expression
+    pan_last_four: Expression
+    card_type: Expression
+    pin: Expression
+    created: Expression
+    expiration: Expression
+    modified: Expression
+    card_packaging_type: Expression
+    card_active_status: Expression
+    pan: Expression
+    card_id: Expression
+}
+
+type mutations_cards_delete_output {
+    records: [cards]
+}
+
+enum Sort {
+    ASC
+    DESC
+}
+
+type customers {
+    address1: String
+    address2: String
+    birthdate: Date
+    city: String
+    country: String
+    created: Timestamp
+    customer_accounts: [customer_accounts]
+    customer_id: UUID
+    email: String
+    forename: String
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [customers]
+    modified: Timestamp
+    phone: String
+    postal_code: String
+    seq: Uint64
+    ssn: UUID
+    state: String
+    status: String
+    surname: String
+}
+
+type card_holders {
+    account_id: UUID
+    card: [cards]
+    card_id: UUID
+    created: Timestamp
+    customer_account: [customer_accounts]
+    customer_id: UUID
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [card_holders]
+    seq: Uint64
+}
+
+input mutations_expr_transactions {
+    correlation_id: Expression
+    effective: Expression
+    created: Expression
+    account_id: Expression
+    layer_id: Expression
+    credit: Expression
+    operating_account_id: Expression
+    transaction_id: Expression
+    journal_id: Expression
+    tran_code_id: Expression
+    amount: Expression
+}
+
+type mutations_balances_account_update_output {
+    records: [balances_account]
+}
+
+input mutations_balances_account_input {
+    document: mutations_expr_balances_account
+    scope: String
+}
+
+type mutations_accounts_all {
+    delete(input: mutations_accounts_delete): mutations_accounts_delete_output
+    insert(input: mutations_accounts_input): mutations_accounts_insert_output
+    update(input: mutations_accounts_update): mutations_accounts_update_output
+}
+
+"The `Int64` scalar type represents non-fractional signed whole numeric values. Int64 can represent values between -(2^63) and 2^63 - 1. "
+scalar Int64
+
+type mutations_customer_accounts_insert_output {
+    record: customer_accounts
+}
+
+type mutations_layers_all {
+    delete(input: mutations_layers_delete): mutations_layers_delete_output
+    insert(input: mutations_layers_input): mutations_layers_insert_output
+    update(input: mutations_layers_update): mutations_layers_update_output
+}
+
+type mutations_layers_insert_output {
+    record: layers
+}
+
+type mutations_layers_update_output {
+    records: [layers]
+}
+
+type Mutation {
+    accounts: mutations_accounts_all
+    balances_account: mutations_balances_account_all
+    card_holders: mutations_card_holders_all
+    cards: mutations_cards_all
+    customer_accounts: mutations_customer_accounts_all
+    customers: mutations_customers_all
+    journals: mutations_journals_all
+    layers: mutations_layers_all
+    tran_codes: mutations_tran_codes_all
+    transactions: mutations_transactions_all
+}
+
+input mutations_balances_account_delete {
+    scope: String
+    index: balances_account_indexes
+    where: Where
+    limit: Int32 = "1000"
+}
+
+type mutations_balances_account_insert_output {
+    record: balances_account
+}
+
+input mutations_cards_delete {
+    index: cards_indexes
+    where: Where
+    limit: Int32 = "1000"
+    scope: String
+}
+
+type mutations_layers_delete_output {
+    records: [layers]
+}
+
+type mutations_card_holders_all {
+    delete(input: mutations_card_holders_delete): mutations_card_holders_delete_output
+    insert(input: mutations_card_holders_input): mutations_card_holders_insert_output
+    update(input: mutations_card_holders_update): mutations_card_holders_update_output
+}
+
+type mutations_tran_codes_update_output {
+    records: [tran_codes]
+}
+
+type mutations_cards_update_output {
+    records: [cards]
+}
+
+scalar Uint64
+
+type mutations_tran_codes_delete_output {
+    records: [tran_codes]
+}
+
+type mutations_transactions_update_output {
+    records: [transactions]
+}
+
+input mutations_expr_accounts {
+    modified: Expression
+    status: Expression
+    account_id: Expression
+    account_type: Expression
+    created: Expression
+}
+
+input mutations_tran_codes_input {
+    scope: String
+    document: mutations_expr_tran_codes
+}
+
+type mutations_tran_codes_insert_output {
+    record: tran_codes
+}
+
+input mutations_customer_accounts_update {
+    scope: String
+    index: customer_accounts_indexes
+    where: Where
+    document: mutations_expr_customer_accounts
+    limit: Int32 = "1000"
+}
+
+input mutations_accounts_input {
+    scope: String
+    document: mutations_expr_accounts
+}
+
+type mutations_accounts_insert_output {
+    record: accounts
+}
+
+input mutations_transactions_update {
+    document: mutations_expr_transactions
+    limit: Int32 = "1000"
+    scope: String
+    index: transactions_indexes
+    where: Where
+}
+
+type ReconciledTransaction {
+    reconciled: Boolean!
+}
+
+type mutations_customers_update_output {
+    records: [customers]
+}
+
+type mutations_tran_codes_all {
+    delete(input: mutations_tran_codes_delete): mutations_tran_codes_delete_output
+    insert(input: mutations_tran_codes_input): mutations_tran_codes_insert_output
+    update(input: mutations_tran_codes_update): mutations_tran_codes_update_output
+}
+
+type mutations_customers_insert_output {
+    record: customers
+}
+
+"Indexes for table layers"
+enum layers_indexes {
+    layer_id
+}
+
+input mutations_layers_delete {
+    scope: String
+    index: layers_indexes
+    where: Where
+    limit: Int32 = "1000"
+}
+
+type mutations_card_holders_insert_output {
+    record: card_holders
+}
+
+type transactions {
+    account: [accounts]
+    account_id: UUID
+    amount: Int64
+    correlation_id: UUID
+    created: Timestamp
+    credit: Boolean
+    effective: Date
+    history(limit: Int32 = "1000", sort: Sort = DESC): [transactions]
+    journal: [journals]
+    journal_id: Int64
+    layer: [layers]
+    layer_id: Int64
+    operating_account: [accounts]
+    operating_account_id: UUID
+    seq: Uint64
+    tran_code: [tran_codes]
+    tran_code_id: Int64
+    transaction_id: UUID
+}
+
+type journals {
+    created: Timestamp
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [journals]
+    journal_id: Int64
+    journal_name: String
+    modified: Timestamp
+    seq: Uint64
+    status: String
+}
+
+type mutations_transactions_delete_output {
+    records: [transactions]
+}
+
+input mutations_journals_delete {
+    where: Where
+    limit: Int32 = "1000"
+    scope: String
+    index: journals_indexes
+}
+
+type mutations_balances_account_delete_output {
+    records: [balances_account]
+}
+
+type mutations_cards_all {
+    delete(input: mutations_cards_delete): mutations_cards_delete_output
+    insert(input: mutations_cards_input): mutations_cards_insert_output
+    update(input: mutations_cards_update): mutations_cards_update_output
+}
+
+type cards {
+    card_active_status: String
+    card_delivery_type: String
+    card_holder_name: String
+    card_id: UUID
+    card_packaging_type: String
+    card_status: String
+    card_type: String
+    created: Timestamp
+    expiration: Date
+    history(sort: Sort = DESC, limit: Int32 = "1000"): [cards]
+    modified: Timestamp
+    pan: UUID
+    pan_last_four: String
+    pin: UUID
+    seq: Uint64
+}
+
+"Indexes for table transactions"
+enum transactions_indexes {
+    transaction_id
+    account_id
+}
+
+type mutations_balances_account_all {
+    delete(input: mutations_balances_account_delete): mutations_balances_account_delete_output
+    insert(input: mutations_balances_account_input): mutations_balances_account_insert_output
+    update(input: mutations_balances_account_update): mutations_balances_account_update_output
+}
+
+"The `Int32` scalar type represents non-fractional signed whole numeric values. Int32 can represent values between -(2^31) and 2^31 - 1. "
+scalar Int32
+
+"A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC 4122."
+scalar UUID
+
+"Indexes for table accounts"
+enum accounts_indexes {
+    account_id
+}
+
+type mutations_accounts_update_output {
+    records: [accounts]
+}
+
+input mutations_customers_input {
+    document: mutations_expr_customers
+    scope: String
+}
+
+input mutations_cards_input {
+    document: mutations_expr_cards
+    scope: String
+}
