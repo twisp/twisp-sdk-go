@@ -6,26 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/twisp/twisp-sdk-go/pkg/client"
 	"github.com/twisp/twisp-sdk-go/pkg/token"
 )
-
-type authedTransport struct {
-	jwt             string
-	xtwispAccountID string
-	wrapped         http.RoundTripper
-}
-
-func (t *authedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.jwt))
-	if t.xtwispAccountID != "" {
-		req.Header.Set("X-Twisp-Account-Id", t.xtwispAccountID)
-	}
-	return t.wrapped.RoundTrip(req)
-}
 
 var (
 	region          = os.Getenv("AWS_REGION")
@@ -64,15 +50,7 @@ func main() {
 		authorization = customerJWT
 	}
 
-	httpClient := http.Client{
-		Transport: &authedTransport{
-			jwt:             authorization,
-			xtwispAccountID: customerAccount,
-			wrapped:         http.DefaultTransport,
-		},
-	}
-
-	graphqlClient := graphql.NewClient(graphqlURL, &httpClient)
+	graphqlClient := graphql.NewClient(graphqlURL, client.NewTwispClient(authorization, customerAccount))
 
 	resp, err := checkBalance(context.Background(), graphqlClient, "c9956621-2209-4d0d-bec0-52107fe833fd")
 
