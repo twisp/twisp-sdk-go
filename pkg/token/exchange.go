@@ -8,6 +8,9 @@ import (
 	"net/http"
 )
 
+//Exchange takes the IAM credentials (from environment) and exchanges it for an OIDC
+//token from twisp to use on twisp's /graphql endpoint.  The principal on the policies
+//that Twisp evaluates should be set to the ARN of the AWS role.
 func Exchange(account string, region string) ([]byte, error) {
 	authURL := fmt.Sprintf("https://auth.%s.%s.twisp.com/", region, account)
 	tokenURL := fmt.Sprintf("%stoken/iam", authURL)
