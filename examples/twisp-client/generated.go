@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/google/uuid"
 )
 
 // __checkBalanceInput is used internally by genqlient
@@ -18,15 +19,15 @@ func (v *__checkBalanceInput) GetAccountID() string { return v.AccountID }
 
 // checkBalanceBalances_account includes the requested fields of the GraphQL type balances_account.
 type checkBalanceBalances_account struct {
-	Account_id string `json:"account_id"`
-	Journal_id int64  `json:"journal_id"`
-	Layer_id   int64  `json:"layer_id"`
-	Cr_balance int64  `json:"cr_balance"`
-	Dr_balance int64  `json:"dr_balance"`
+	Account_id uuid.UUID `json:"account_id"`
+	Journal_id int64     `json:"journal_id"`
+	Layer_id   int64     `json:"layer_id"`
+	Cr_balance int64     `json:"cr_balance"`
+	Dr_balance int64     `json:"dr_balance"`
 }
 
 // GetAccount_id returns checkBalanceBalances_account.Account_id, and is useful for accessing the field via an interface.
-func (v *checkBalanceBalances_account) GetAccount_id() string { return v.Account_id }
+func (v *checkBalanceBalances_account) GetAccount_id() uuid.UUID { return v.Account_id }
 
 // GetJournal_id returns checkBalanceBalances_account.Journal_id, and is useful for accessing the field via an interface.
 func (v *checkBalanceBalances_account) GetJournal_id() int64 { return v.Journal_id }
@@ -82,11 +83,11 @@ func (v *insertTransactionTransactionsMutations_transactions_allInsertMutations_
 
 // insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions includes the requested fields of the GraphQL type transactions.
 type insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions struct {
-	Transaction_id string `json:"transaction_id"`
+	Transaction_id uuid.UUID `json:"transaction_id"`
 }
 
 // GetTransaction_id returns insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions.Transaction_id, and is useful for accessing the field via an interface.
-func (v *insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions) GetTransaction_id() string {
+func (v *insertTransactionTransactionsMutations_transactions_allInsertMutations_transactions_insert_outputRecordTransactions) GetTransaction_id() uuid.UUID {
 	return v.Transaction_id
 }
 

@@ -21,4 +21,4 @@ bindings:
   Date:
     type: time.Time
   UUID:
-    type: string
+    type: github.com/google/uuid.UUID

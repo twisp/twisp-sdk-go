@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/google/uuid"
 	"github.com/twisp/twisp-sdk-go/pkg/client"
 	"github.com/twisp/twisp-sdk-go/pkg/token"
 )

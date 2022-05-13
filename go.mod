@@ -18,6 +18,7 @@ require (
 
 require (
 	github.com/Khan/genqlient v0.4.1-0.20220512220055-39cd158d3316
+	github.com/google/uuid v1.3.0
 	github.com/imdario/mergo v0.3.12
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
