@@ -54,7 +54,7 @@ type twispClient struct {
 	wrapped   graphql.Client
 }
 
-// MakeRequest will wrapps up the standard genqlient graphql.Client but:
+// MakeRequest will wraps up the standard genqlient graphql.Client but:
 // 1. Adds variables to standard request if none are set.
 // 2. If variables and req.Variables are set, merges together favoring req.Variables.
 func (tc *twispClient) MakeRequest(ctx context.Context, req *graphql.Request, resp *graphql.Response) error {
