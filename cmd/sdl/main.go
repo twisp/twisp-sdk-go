@@ -60,7 +60,7 @@ func main() {
 		authorization = []byte(customerJWT)
 	}
 
-	c = client.NewTwispClient(string(authorization), customerAccount)
+	c = client.NewTwispHttp(string(authorization), customerAccount)
 
 	q := Query{
 		Query:         `{ _service { sdl } }`,
