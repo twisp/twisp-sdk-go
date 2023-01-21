@@ -1,38 +1,47 @@
-query checkBalance($accountID: String) {
-  balances_account(
-    index: account_id,
-    where: { partition: [$accountID]}
-  ) {
-    account_id
-    journal_id
-    layer_id
-    cr_balance
-    dr_balance
-  }
-}
-
-mutation insertTransaction {
-  transactions {
-    insert(
-      input: {
-        document: {
-          transaction_id: "uuid.New()",
-          correlation_id: "uuid(context.vars.correlation_id)",
-          account_id: "uuid(context.vars.account.account_id)",
-          operating_account_id: "uuid(context.vars.settlement_account.account_id)",
-          tran_code_id: "int(context.vars.tran_code_id)",
-          journal_id: "int(context.vars.journal_id)",
-          layer_id: "int(context.vars.layer_id)",
-          credit: "context.vars.credit",
-          amount: "int(context.vars.amount)"
-          effective: "date(context.vars.effective)",
-          created: "timestamp(context.vars.created)",
+query CheckAccountBalances(
+  $accountId: UUID!
+  $journalId: UUID!
+) {
+  account(id: $accountId) {
+    name
+    balance(journalId: $journalId) {
+      settled {
+        normalBalance {
+          units
         }
-      }
-    ) {
-      record {
-        transaction_id
       }
     }
   }
-} 
+}
+
+mutation PostDeposit(
+  $transactionId: UUID!
+  $account: String!
+  $amount: String!
+  $effective: String!
+){
+  postTransaction(
+    input: {
+      transactionId: $transactionId
+      tranCode: "ACH_CREDIT"
+      params: {
+        account: $account
+        amount: $amount
+        effective: $effective
+      }
+    }
+  ) {
+    transactionId
+    tranCodeId
+    effective
+    entries(first: 2) {
+      nodes {
+        units
+        direction
+        account {
+          name
+        }
+      }
+    }
+  }
+}

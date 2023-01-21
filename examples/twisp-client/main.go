@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/google/uuid"
 	_ "github.com/google/uuid"
 	"github.com/twisp/twisp-sdk-go/pkg/client"
 	"github.com/twisp/twisp-sdk-go/pkg/token"
@@ -23,14 +24,14 @@ var (
 func main() {
 	flag.StringVar(&account, "account", "cloud", "which twisp account to use for signing.")
 	flag.StringVar(&region, "region", "us-east-2", "the aws region you're authenticating against.")
-	flag.StringVar(&customerJWT, "jwt", "", "an oidc compliant jwt you wish to use. If you use jwt you must specify your aws account.")
-	flag.StringVar(&customerAccount, "customer-account", "", "the AWS customer account. If using IAM auth do not set.")
+	flag.StringVar(&customerJWT, "jwt", "", "an oidc compliant jwt you wish to use.")
+	flag.StringVar(&customerAccount, "customer-account", "", "The customer account to target")
 	flag.Parse()
 
 	var isIAM bool
 	var graphqlURL string
 
-	if customerJWT != "" && customerAccount == "" {
+	if customerAccount == "" {
 		handle(fmt.Errorf("customer-account is required"))
 	}
 
@@ -39,59 +40,36 @@ func main() {
 	}
 
 	var authorization string
+	graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
 
 	if isIAM {
-		graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/graphql", region, account)
 		a, err := token.Exchange(account, region)
 		handle(err)
 		authorization = string(a)
 	} else {
-		graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/graphql/oidc", region, account)
 		authorization = customerJWT
 	}
 
 	twispHTTP := client.NewTwispHttp(authorization, customerAccount)
 
 	// Check a balance
-	graphqlClient := client.NewTwispClient(graphqlURL, nil, twispHTTP)
-	resp, err := checkBalance(
+	graphqlClient := client.NewTwispClient(graphqlURL, twispHTTP)
+	resp, err := CheckAccountBalances(
 		context.Background(),
 		graphqlClient,
-		"c9956621-2209-4d0d-bec0-52107fe833fd",
+		uuid.MustParse("1fd1dd3e-33fe-4ef5-9d58-676ef8d306b5"),
+		uuid.MustParse("822cb59f-ce51-4837-8391-2af3b7a5fc51"),
 	)
 	handle(err)
 	PrintJSON(resp)
 
-	//Insert a transaction
-	var transactionJSON = `
-{
-	"account": {
-		"account_id": "c9956621-2209-4d0d-bec0-52107fe833fd",
-		"status": "OPEN",
-		"account_type": "DDA"
-	},
-	"settlement_account": {
-		"account_id": "79109baf-f687-4ccb-b797-c132d64adf36",
-		"status": "OPEN",
-		"account_type": "GL"
-	},
-	"transaction_id": "c81505af-f6a2-46cb-8057-7b1f0af3548c",
-	"correlation_id": "e7cee9e7-ab07-4030-a470-d3ab05a5fd67",
-	"tran_code_id": 3,
-	"journal_id": 1,
-	"layer_id": 1,
-	"effective": "2022-03-20",
-	"created": "2022-03-20T16:25:11.000Z",
-	"credit": false,
-	"amount": 800
-}`
-	var variables map[string]interface{}
-	handle(json.Unmarshal([]byte(transactionJSON), &variables))
-
-	graphqlClient = client.NewTwispClient(graphqlURL, variables, twispHTTP)
-	txResp, err := insertTransaction(
+	txResp, err := PostDeposit(
 		context.Background(),
 		graphqlClient,
+		uuid.Must(uuid.NewRandom()),
+		"1fd1dd3e-33fe-4ef5-9d58-676ef8d306b5",
+		"1.00",
+		"2023-01-01",
 	)
 	handle(err)
 	PrintJSON(txResp)

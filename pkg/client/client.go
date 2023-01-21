@@ -10,8 +10,8 @@ import (
 	"github.com/imdario/mergo"
 )
 
-//authedTransport puts the authorization headers in the correct
-//spots on the client.
+// authedTransport puts the authorization headers in the correct
+// spots on the client.
 type authedTransport struct {
 	jwt             string
 	xtwispAccountID string
@@ -26,7 +26,7 @@ func (t *authedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.wrapped.RoundTrip(req)
 }
 
-//NewTwispHttp returns an *http.Client that sets authorization and x-twisp-account-id headers.
+// NewTwispHttp returns an *http.Client that sets authorization and x-twisp-account-id headers.
 func NewTwispHttp(authorization, customerAccount string) *http.Client {
 	httpClient := http.Client{
 		Transport: &authedTransport{
@@ -39,35 +39,39 @@ func NewTwispHttp(authorization, customerAccount string) *http.Client {
 	return &httpClient
 }
 
-//NewTwispClient implements a graphql.Client that allows override/merging of Variables sent by
-//the client.  This allows Twisp to use graphql variables without having to have every query
-//have typed inputs.
-func NewTwispClient(endpoint string, variables map[string]any, httpClient *http.Client) graphql.Client {
+// NewTwispClient implements a graphql.Client that allows override/merging of Variables sent by
+// the client.  This allows Twisp to use graphql variables without having to have every query
+// have typed inputs.
+func NewTwispClient(endpoint string, httpClient *http.Client) graphql.Client {
 	return &twispClient{
-		variables: variables,
-		wrapped:   graphql.NewClient(endpoint, httpClient),
+		wrapped: graphql.NewClient(endpoint, httpClient),
 	}
 }
 
 type twispClient struct {
-	variables map[string]any
-	wrapped   graphql.Client
+	wrapped graphql.Client
 }
 
 // MakeRequest will wraps up the standard genqlient graphql.Client but:
 // 1. Adds variables to standard request if none are set.
 // 2. If variables and req.Variables are set, merges together favoring req.Variables.
 func (tc *twispClient) MakeRequest(ctx context.Context, req *graphql.Request, resp *graphql.Response) error {
-	if len(tc.variables) == 0 {
+	vars := ctx.Value(TwispContextKey)
+	if vars == nil {
+		return tc.wrapped.MakeRequest(ctx, req, resp)
+	}
+
+	varsMap, ok := vars.(map[string]interface{})
+	if !ok {
 		return tc.wrapped.MakeRequest(ctx, req, resp)
 	}
 
 	if req.Variables == nil {
-		req.Variables = tc.variables
+		req.Variables = varsMap
 		return tc.wrapped.MakeRequest(ctx, req, resp)
 	}
 
-	err := merge(tc.variables, req)
+	err := merge(varsMap, req)
 	if err != nil {
 		return err
 	}

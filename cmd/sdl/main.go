@@ -27,8 +27,8 @@ func main() {
 
 	flag.StringVar(&account, "account", "cloud", "which twisp account to use for signing.")
 	flag.StringVar(&region, "region", "us-east-2", "the aws region you're authenticating against.")
-	flag.StringVar(&customerJWT, "jwt", "", "an oidc compliant jwt you wish to use. If you use jwt you must specify your aws account.")
-	flag.StringVar(&customerAccount, "customer-account", "", "the AWS customer account. If using IAM auth do not set.")
+	flag.StringVar(&customerJWT, "jwt", "", "an oidc compliant jwt you wish to use.")
+	flag.StringVar(&customerAccount, "customer-account", "", "the customer account id.")
 
 	flag.StringVar(&schemaOut, "schema-out", "", "the location to put the file. If not specified, printed on stdout")
 	flag.Parse()
@@ -36,7 +36,7 @@ func main() {
 	var isIAM bool
 	var graphqlURL string
 
-	if customerJWT != "" && customerAccount == "" {
+	if customerAccount == "" {
 		handle(fmt.Errorf("customer-account is required"))
 	}
 
@@ -44,11 +44,7 @@ func main() {
 		isIAM = true
 	}
 
-	if isIAM {
-		graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/graphql", region, account)
-	} else {
-		graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/graphql/oidc", region, account)
-	}
+	graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
 
 	var authorization = []byte{}
 
@@ -76,9 +72,7 @@ func main() {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", string(authorization)))
-	if customerAccount != "" {
-		req.Header.Add("x-twisp-account-id", customerAccount)
-	}
+	req.Header.Add("x-twisp-account-id", customerAccount)
 
 	resp, err := c.Do(req)
 	handle(err)

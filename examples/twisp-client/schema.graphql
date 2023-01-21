@@ -1,760 +1,2227 @@
 schema {
-    query: Query
-    mutation: Mutation
+  query: Query
+  mutation: Mutation
 }
 
-type mutations_transactions_all {
-    delete(input: mutations_transactions_delete): mutations_transactions_delete_output
-    insert(input: mutations_transactions_input): mutations_transactions_insert_output
-    reconcile(t: TransactionInput!): ReconciledTransaction
-    update(input: mutations_transactions_update): mutations_transactions_update_output
+directive @goModel(
+  model: String
+  models: [String!]
+) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+
+directive @goField(
+  forceResolver: Boolean
+  name: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @goTag(
+  key: String!
+  value: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+# Enable base-level queries once we have fields to expose here.
+# For now, the Query type is defined in account.graphql, and expanded upon elsewhere.
+# type Query {
+# }
+
+type Mutation {
+  "Evaluate a CEL (common expression language) expression using Twisp's calculation engine. Returns a String representation of the evaluated result."
+  evaluate(expressions: ExpressionMap!, document: Value): Value!
 }
 
-input mutations_customers_delete {
-    index: customers_indexes
-    where: Where
-    limit: Int32 = "1000"
-    scope: String
-}
-
-type mutations_cards_insert_output {
-    record: cards
-}
-
-type tran_codes {
-    account: [accounts]
-    credit: Boolean
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [tran_codes]
-    layer_id: Int64
-    layers: [layers]
-    offset_account_id: UUID
-    seq: Uint64
-    signum: Int64
-    tran_code: String
-    tran_code_id: Int64
-    tran_code_name: String
-}
-
-"Indexes for table customers"
-enum customers_indexes {
-    customer_id
-    email
-}
-
-"Indexes for table journals"
-enum journals_indexes {
-    journal_id
-}
-
-input mutations_layers_input {
-    document: mutations_expr_layers
-    scope: String
-}
-
-type mutations_journals_all {
-    delete(input: mutations_journals_delete): mutations_journals_delete_output
-    insert(input: mutations_journals_input): mutations_journals_insert_output
-    update(input: mutations_journals_update): mutations_journals_update_output
-}
-
-input mutations_expr_layers {
-    layer_id: Expression
-    layer: Expression
-}
-
-input mutations_accounts_update {
-    scope: String
-    index: accounts_indexes
-    where: Where
-    document: mutations_expr_accounts
-    limit: Int32 = "1000"
-}
-
-input mutations_tran_codes_delete {
-    where: Where
-    limit: Int32 = "1000"
-    scope: String
-    index: tran_codes_indexes
-}
-
-type mutations_transactions_insert_output {
-    record: transactions
-}
-
-input mutations_expr_tran_codes {
-    tran_code_name: Expression
-    credit: Expression
-    layer_id: Expression
-    offset_account_id: Expression
-    signum: Expression
-    tran_code: Expression
-    tran_code_id: Expression
-}
-
-input mutations_transactions_delete {
-    scope: String
-    index: transactions_indexes
-    where: Where
-    limit: Int32 = "1000"
-}
-
-type accounts {
-    account_customers: [customer_accounts]
-    account_id: UUID
-    account_type: String
-    balances_account: [balances_account]
-    created: Timestamp
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [accounts]
-    modified: Timestamp
-    seq: Uint64
-    status: String
-    transactions: [transactions]
-}
-
-input mutations_expr_customer_accounts {
-    account_id: Expression
-    created: Expression
-    customer_account_type: Expression
-    customer_id: Expression
-    modified: Expression
-    primary_account: Expression
-}
-
-input mutations_tran_codes_update {
-    where: Where
-    document: mutations_expr_tran_codes
-    limit: Int32 = "1000"
-    scope: String
-    index: tran_codes_indexes
-}
-
-input mutations_customers_update {
-    document: mutations_expr_customers
-    limit: Int32 = "1000"
-    scope: String
-    index: customers_indexes
-    where: Where
-}
-
-"A `Date` represents a year, month, and day"
+"Date in YYYY-MM-DD format. @example('2022-08-18')"
 scalar Date
 
-"Indexes for table balances_account"
-enum balances_account_indexes {
-    account_journal_id
-    account_journal_layer_id
-    account_id
-}
+"Decimal is a fixed-precision data type supporting exact representation of numeric values. @example(105.92851)"
+scalar Decimal
 
-input mutations_customer_accounts_input {
-    scope: String
-    document: mutations_expr_customer_accounts
-}
+"""
+[RFC3339-compliant](https://www.rfc-editor.org/rfc/rfc3339) UTC timestamp.
+@example('2022-04-27T10:50:00.000Z')
+"""
+scalar Timestamp
 
-input mutations_journals_update {
-    where: Where
-    document: mutations_expr_journals
-    limit: Int32 = "1000"
-    scope: String
-    index: journals_indexes
-}
+"""
+Interpolated string expression. Values within `{{}}` are evaluated as a CEL expression.
 
-input mutations_expr_balances_account {
-    account_id: Expression
-    cr_balance: Expression
-    dr_balance: Expression
-    journal_id: Expression
-    layer_id: Expression
-    transaction_id: Expression
-}
+Examples:
+- `Current time: {{time.Now()}}` => `"Current time: 2022-04-27T10:50:00.000Z"`
+- `Raw String` => `"Raw String"`
+- `{{uuid.New()}}` => `"9dd984db-78d8-420f-9380-80e3cf36fe75"`
+"""
+scalar InterpolatedExpression
 
-type mutations_customer_accounts_delete_output {
-    records: [customer_accounts]
-}
-
-input mutations_expr_card_holders {
-    card_id: Expression
-    created: Expression
-    customer_id: Expression
-    account_id: Expression
-}
-
-type mutations_card_holders_delete_output {
-    records: [card_holders]
-}
-
-input mutations_journals_input {
-    scope: String
-    document: mutations_expr_journals
-}
-
-input mutations_expr_journals {
-    modified: Expression
-    status: Expression
-    created: Expression
-    journal_id: Expression
-    journal_name: Expression
-}
-
-type mutations_journals_insert_output {
-    record: journals
-}
-
-input mutations_card_holders_input {
-    scope: String
-    document: mutations_expr_card_holders
-}
-
-input TransactionInput {
-    correlation: String!
-}
-
-"Input object for index query filters."
-input Where {
-    gt: [String]
-    partition: [String]
-    lt: [String]
-    and: [String]
-    eq: [String]
-    startsWith: [String]
-    lte: [String]
-    gte: [String]
-    between: [String]
-}
-
-type layers {
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [layers]
-    layer: String
-    layer_id: Int64
-    seq: Uint64
-}
-
-input mutations_layers_update {
-    scope: String
-    index: layers_indexes
-    where: Where
-    document: mutations_expr_layers
-    limit: Int32 = "1000"
-}
-
-input mutations_accounts_delete {
-    scope: String
-    index: accounts_indexes
-    where: Where
-    limit: Int32 = "1000"
-}
-
-type customer_accounts {
-    account: [accounts]
-    account_id: UUID
-    created: Timestamp
-    customer_account_type: String
-    customer_id: UUID
-    customers: [customers]
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [customer_accounts]
-    modified: Timestamp
-    primary_account: Boolean
-    seq: Uint64
-}
-
-"Indexes for table cards"
-enum cards_indexes {
-    card_id
-}
-
-type mutations_customer_accounts_all {
-    delete(input: mutations_customer_accounts_delete): mutations_customer_accounts_delete_output
-    insert(input: mutations_customer_accounts_input): mutations_customer_accounts_insert_output
-    update(input: mutations_customer_accounts_update): mutations_customer_accounts_update_output
-}
-
-input mutations_cards_update {
-    scope: String
-    index: cards_indexes
-    where: Where
-    document: mutations_expr_cards
-    limit: Int32 = "1000"
-}
-
-input mutations_transactions_input {
-    scope: String
-    document: mutations_expr_transactions
-}
-
-input mutations_expr_customers {
-    modified: Expression
-    state: Expression
-    city: Expression
-    phone: Expression
-    status: Expression
-    country: Expression
-    surname: Expression
-    customer_id: Expression
-    ssn: Expression
-    postal_code: Expression
-    email: Expression
-    created: Expression
-    address2: Expression
-    address1: Expression
-    birthdate: Expression
-    forename: Expression
-}
-
-input mutations_customer_accounts_delete {
-    scope: String
-    index: customer_accounts_indexes
-    where: Where
-    limit: Int32 = "1000"
-}
-
-input mutations_card_holders_delete {
-    limit: Int32 = "1000"
-    scope: String
-    index: card_holders_indexes
-    where: Where
-}
-
-input mutations_card_holders_update {
-    limit: Int32 = "1000"
-    scope: String
-    index: card_holders_indexes
-    where: Where
-    document: mutations_expr_card_holders
-}
-
-type balances_account {
-    account_id: UUID
-    cr_balance: Int64
-    dr_balance: Int64
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [balances_account]
-    journal_id: Int64
-    layer_id: Int64
-    seq: Uint64
-    transaction_id: UUID
-}
-
-"Indexes for table customer_accounts"
-enum customer_accounts_indexes {
-    customer_account_id
-    customer_id
-    account_customer_id
-}
-
-"The `Expression` scalar type represents a Common Expression Language textual expression."
+"""
+A literal CEL expression to be evaluated.
+"""
 scalar Expression
 
-type mutations_customers_all {
-    delete(input: mutations_customers_delete): mutations_customers_delete_output
-    insert(input: mutations_customers_input): mutations_customers_insert_output
-    update(input: mutations_customers_update): mutations_customers_update_output
+"""
+A map of literal Cel expressions to be evaluated in a shared context
+Ex: {
+  "two": "this.one + 1",
+  "one": "2 - 1",
+  "sqrt2": "math.Sqrt(double(2))",
+  "now": "time.Now()"
+}
+"""
+scalar ExpressionMap
+
+"String value for an entry type. @example('ACH_CR')"
+scalar EntryType
+
+"""
+JSON object.
+
+@example(`{ "counts": 12, "name": "Metric A" }`)
+"""
+scalar JSON
+
+"""
+Value object. Similar to the JSON object with support for type coersion
+
+@example(`{ "int": 12, "float": 1.732, "uuid": "D3DC5ED3-23D0-4924-BAE1-9AA026BACE09"}`)
+"""
+scalar Value
+
+"""
+128-bit universally unique identifier (UUID). Used for most ID fields on records.
+@example('3ea12e45-7df2-4293-9434-feb792affc91')
+"""
+scalar UUID
+
+"""
+Account status determines whether the account is in active use or closed (locked). By default, all accounts are `ACTIVE`.
+
+[NOT YET IMPLEMENTED] When account is `LOCKED`, it cannot be changed and any attempt to write a ledger entry to this account will raise an error.
+"""
+enum AccountStatus {
+  "ACTIVE = Account is open for posting."
+  ACTIVE
 }
 
-input mutations_balances_account_update {
-    scope: String
-    index: balances_account_indexes
-    where: Where
-    document: mutations_expr_balances_account
-    limit: Int32 = "1000"
+"Debit or credit? Sometimes these are abbreviated to DR and CR."
+enum DebitOrCredit {
+  DEBIT
+  CREDIT
 }
 
-type mutations_customers_delete_output {
-    records: [customers]
+"""
+The ledger can apply a entries to one of three layers: SETTLED, PENDING, and ENCUMBRANCE.
+
+The SETTLED layer is what is actually fully settled.
+
+The PENDING layer is what's settled but also includes holds and pending charges. This can be used to verify the account will have enough funds after the holds and pending transactions have cleared.
+
+The ENCUMBRANCE layer allows us to add future transactions that are scheduled and also goals or budgeting tools to set money aside in the account.
+"""
+enum Layer {
+  SETTLED
+  PENDING
+  ENCUMBRANCE
 }
 
-type mutations_journals_delete_output {
-    records: [journals]
+"Data type of a parameter."
+enum ParamDataType {
+  STRING
+  INTEGER
+  DECIMAL
+  BOOLEAN
+  UUID
+  DATE
+  TIMESTAMP
+  JSON
 }
 
-"Indexes for table card_holders"
-enum card_holders_indexes {
-    customer_id
-    account_id
-    card_id
+"`ASC` (ascending) or `DESC` (descending)."
+enum SortOrder {
+  ASC
+  DESC
 }
 
-type mutations_customer_accounts_update_output {
-    records: [customer_accounts]
+"""
+Record status. All records are `ACTIVE` by default.
+
+[NOT YET IMPLEMENTED] To avoid rewriting accounting history, most records should not be deleted but simply marked `LOCKED`, indicating that they should not be used.
+"""
+enum Status {
+  ACTIVE
 }
 
-type mutations_accounts_delete_output {
-    records: [accounts]
+"""
+Conditional logic by which to apply a filter on a query.
+
+Each FilterValue object must contain just one key/value pair.
+
+Valid: `{ eq: "123" }`\
+Invalid: `{ eq: "123", gt: "100" }`
+"""
+input FilterValue {
+  eq: String
+  like: String
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  all: Boolean
+
+  # Not yet implemented
+  # in: [String]
+  # has: String
+  # null: String
 }
 
-type mutations_card_holders_update_output {
-    records: [card_holders]
+type PageInfo {
+  "True if there are nodes in the connection before the current page / start cursor."
+  hasPreviousPage: Boolean!
+  "True if there are nodes in the connection after the current page / end cursor."
+  hasNextPage: Boolean!
+  "Query cursor for the first node in the current page."
+  startCursor: String
+  "Query cursor for the last node in the current page."
+  endCursor: String
+}
+
+"Connection types must contain a `pageInfo` field as well as `nodes` and `edges`."
+interface Connection {
+  pageInfo: PageInfo!
 }
 
 type Query {
-    accounts(scope: String, index: accounts_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [accounts]
-    balances_account(scope: String, index: balances_account_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [balances_account]
-    card_holders(index: card_holders_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000", scope: String): [card_holders]
-    cards(scope: String, index: cards_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [cards]
-    customer_accounts(scope: String, index: customer_accounts_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [customer_accounts]
-    customers(scope: String, index: customers_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [customers]
-    journals(index: journals_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000", scope: String): [journals]
-    layers(scope: String, index: layers_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [layers]
-    tran_codes(scope: String, index: tran_codes_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [tran_codes]
-    transactions(scope: String, index: transactions_indexes, where: Where = {}, sort: Sort = ASC, limit: Int32 = "1000"): [transactions]
+  "Get a single account by its `accountId`."
+  account(
+    """
+    Unique identifier. @example("3ea12e45-7df2-4293-9434-feb792affc91")
+    """
+    id: UUID!
+  ): Account
+
+  "Select one or more accounts. Specify the index to use and apply filters to your query."
+  accounts(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: AccountIndexInput!
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: AccountFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): AccountConnection!
 }
 
-"A `Timestamp` represents a point in time independent of any time zone or calendar, represented as seconds and fractions of seconds at nanosecond resolution in UTC Epoch time."
-scalar Timestamp
+extend type Mutation {
+  "Create a new account."
+  createAccount("Fields to create a new account." input: AccountInput!): Account!
 
-"Indexes for table tran_codes"
-enum tran_codes_indexes {
-    tran_code_id
+  "Update fields on an existing account. To ensure data integrity, only a subset of fields are allowed."
+  updateAccount(
+    "Unique identifier."
+    id: UUID!
+    "Fields to update."
+    input: AccountUpdateInput!
+  ): Account!
+
+  "Delete an account. Only allowed if the account has no associated ledger entries."
+  deleteAccount("Unique identifier." id: UUID!): Account
 }
 
-type mutations_journals_update_output {
-    records: [journals]
+"""
+Accounts model all of the economic activity that your ledger provides.
+
+The chart of accounts is the basis for creating balance sheets, P&L reports, and for understanding the balances for the customer and business entities your business services.
+
+Accounts can be organized into sets with the AccountSet type. Hierarchical tree structures which roll up balances across many accounts can be modeled by nesting sets within other sets.
+"""
+type Account {
+  "Unique identifier for the account."
+  accountId: UUID!
+
+  "Allows specifying a unique external ID associated with this account."
+  externalId: String!
+
+  """
+  Account name. @example("Bill Pay Settlement") @example("Courtesy Credit")
+  """
+  name: String!
+
+  """
+  Shorthand code for the account, often an abbreviated version of the account name.
+  Example: 'ACH_RECON' for an account named 'ACH Reconciliation'.
+  """
+  code: String!
+
+  "Description of the account."
+  description: String!
+
+  "Current status for the account."
+  status: AccountStatus!
+
+  """
+  Flag indicating whether this account uses a "debit normal" or a "credit normal" balance.
+
+  In double-entry accounting, accounts with a debit normal balance use the balance calculation `balance = debits - credits`. This is used for asset and expense account types.
+
+  Accounts with a credit normal balance, in contrast, calculate their balance with the equation `balance = credits - debits`. This is the default type for liabilities, equity, and revenue account types.
+  """
+  normalBalanceType: DebitOrCredit!
+
+  "Metadata attached to this account."
+  metadata: JSON
+
+  "Date and time when the account was first created."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this account. Previous versions are tracked in `history`."
+  version: Int!
+
+  _recordId: UUID!
+
+  """
+  Reference to the balances for this account.
+
+  Accounts have balances across all three layers: SETTLED, PENDING, and ENCUMBRANCE.
+
+  Each balance reflects the current total debits and credits for all entries in this account within the specified journal and currency.
+  """
+  balances(
+    "Query conditions to filter the balances returned."
+    where: BalanceFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): BalanceConnection! @goField(forceResolver: true)
+
+  """
+  Reference to the balance for a specific journal and currency (defaults to "USD").
+  """
+  balance(
+    "ID of the journal for the balance."
+    journalId: UUID!
+    "Currency of the balance."
+    currency: CurrencyCode = "USD"
+  ): Balance @goField(forceResolver: true)
+
+  "All ledger entries associated with this account."
+  entries(
+    "Query conditions to filter the entries returned."
+    where: EntryFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): EntryConnection! @goField(forceResolver: true)
+
+  """
+  Accounts can be organized into sets. Each account can belong to zero or multiple account sets.
+  """
+  sets(
+    "Query conditions to filter the account sets returned."
+    where: AccountSetFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): AccountSetConnection! @goField(forceResolver: true)
+
+  """
+  History of changes to this Account record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): AccountConnection! @goField(forceResolver: true)
 }
 
-input mutations_expr_cards {
-    card_delivery_type: Expression
-    card_holder_name: Expression
-    card_status: Expression
-    pan_last_four: Expression
-    card_type: Expression
-    pin: Expression
-    created: Expression
-    expiration: Expression
-    modified: Expression
-    card_packaging_type: Expression
-    card_active_status: Expression
-    pan: Expression
-    card_id: Expression
+"""
+Connection to a list of Account nodes.
+Access Account nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type AccountConnection implements Connection {
+  nodes: [Account]!
+  edges: [AccountConnectionEdge]!
+  pageInfo: PageInfo!
 }
 
-type mutations_cards_delete_output {
-    records: [cards]
+"""
+Edges represent links connecting a parent or query field to a list of Account nodes.
+They contain a reference to the Account node and metadata like the `cursor` position for the edge.
+"""
+type AccountConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Account node at this edge."
+  node: Account
 }
 
-enum Sort {
-    ASC
-    DESC
+"Specify the pre-defined AccountIndex and sort order to use in a query."
+input AccountIndexInput {
+  name: AccountIndex!
+  sort: SortOrder
 }
 
-type customers {
-    address1: String
-    address2: String
-    birthdate: Date
-    city: String
-    country: String
-    created: Timestamp
-    customer_accounts: [customer_accounts]
-    customer_id: UUID
-    email: String
-    forename: String
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [customers]
-    modified: Timestamp
-    phone: String
-    postal_code: String
-    seq: Uint64
-    ssn: UUID
-    state: String
-    status: String
-    surname: String
+"Indexes for querying Accounts. To optimize query performance and apply desired filters, choose the appropriate index."
+enum AccountIndex {
+  "Index by `accountId` field. Must supply an `accountId: { eq: <id> }` filter to the `where` object."
+  ACCOUNT_ID
+  "Index by `name` field. Use to apply query filters on the value of `name`."
+  NAME
+  "Index by `code` field. Use to apply query filters on the value of `code`."
+  CODE
+  "Index by `status` field. Use to apply query filters on the value of `status`."
+  STATUS
+  "Index by `externalId` field. Must supply an `externalId: { eq: <id> }` filter to the `where` object."
+  EXTERNAL_ID
+  CUSTOM
 }
 
-type card_holders {
-    account_id: UUID
-    card: [cards]
-    card_id: UUID
-    created: Timestamp
-    customer_account: [customer_accounts]
-    customer_id: UUID
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [card_holders]
-    seq: Uint64
+"""
+Filter conditions to apply to an account query.
+Filters are only applied if the field is used by the specified index.
+"""
+input AccountFilterInput {
+  "Filter on the `accountId` field. Required when using index `AccountIndex.ACCOUNT_ID`."
+  accountId: FilterValue
+  "Filter on the `externalId` field. Required when using index `AccountIndex.EXTERNAL_ID`."
+  externalId: FilterValue
+  "Filter on the `name` field. Only available when using index `AccountIndex.NAME`."
+  name: FilterValue
+  "Filter on the `code` field. Only available when using index `AccountIndex.CODE`."
+  code: FilterValue
+  "Filter on the `status` field. Only available when using index `AccountIndex.STATUS`."
+  status: FilterValue
+  "Filter by custom index"
+  custom: CustomIndexFilter
 }
 
-input mutations_expr_transactions {
-    correlation_id: Expression
-    effective: Expression
-    created: Expression
-    account_id: Expression
-    layer_id: Expression
-    credit: Expression
-    operating_account_id: Expression
-    transaction_id: Expression
-    journal_id: Expression
-    tran_code_id: Expression
-    amount: Expression
+"Fields to create a new account."
+input AccountInput {
+  "Unique identifier for the account."
+  accountId: UUID!
+  "Allows specifying a unique external ID associated with this account."
+  externalId: String
+  "Shorthand code for the account."
+  code: String!
+  "Account name."
+  name: String!
+  "Determines whether account should use a debit- or credit-normal balance."
+  normalBalanceType: DebitOrCredit! = CREDIT
+  "IDs of AccountSets to add this account to."
+  accountSetIds: [UUID]
+  "Description of the account."
+  description: String
+  "Current status for the account."
+  status: Status! = ACTIVE
+  "Metadata attached to this account."
+  metadata: JSON
 }
 
-type mutations_balances_account_update_output {
-    records: [balances_account]
+"Account fields to update."
+input AccountUpdateInput {
+  "Allows specifying a unique external ID associated with this account."
+  externalId: String
+  "Shorthand code for the account."
+  code: String
+  "Account name."
+  name: String
+  "Determines whether account should use a debit- or credit-normal balance."
+  normalBalanceType: DebitOrCredit
+  "Description of the account."
+  description: String
+  "Current status for the account."
+  status: Status
+  "Metadata attached to this account."
+  metadata: JSON
 }
 
-input mutations_balances_account_input {
-    document: mutations_expr_balances_account
-    scope: String
+extend type Query {
+  "Get a single account set by its `accountSetId`."
+  accountSet("Unique identifier." id: UUID!): AccountSet
+
+  "Select one or more account sets. Specify the index to use and apply filters to your query."
+  accountSets(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: AccountSetIndexInput!
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: AccountSetFilterInput
+    "Number of sets to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve sets. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): AccountSetConnection! @goField(forceResolver: true)
 }
 
-type mutations_accounts_all {
-    delete(input: mutations_accounts_delete): mutations_accounts_delete_output
-    insert(input: mutations_accounts_input): mutations_accounts_insert_output
-    update(input: mutations_accounts_update): mutations_accounts_update_output
+extend type Mutation {
+  "Create a new account set."
+  createAccountSet("Fields to create a new account set." input: AccountSetInput!): AccountSet!
+
+  "Update fields on an existing account set. To ensure data integrity, only a subset of fields are allowed."
+  updateAccountSet(
+    "Unique identifier."
+    id: UUID!
+    "Fields to update."
+    input: AccountSetUpdateInput!
+  ): AccountSet!
+
+  "Add a new member to a set. Members can be an Account or another AccountSet."
+  addToAccountSet(
+    "Unique identifier for set."
+    id: UUID!
+    "Account or AccountSet to add as a member of this set."
+    member: AccountSetMemberInput!
+  ): AccountSet!
+
+  "Remove a member from a set."
+  removeFromAccountSet(
+    "Unique identifier for set."
+    id: UUID!
+    "Account or AccountSet to add as a member of this set."
+    member: AccountSetMemberInput!
+  ): AccountSet!
+
+  "Delete an account set."
+  deleteAccountSet("Unique identifier." id: UUID!): AccountSet
 }
 
-"The `Int64` scalar type represents non-fractional signed whole numeric values. Int64 can represent values between -(2^63) and 2^63 - 1. "
-scalar Int64
+"""
+A set of accounts.
 
-type mutations_customer_accounts_insert_output {
-    record: customer_accounts
+Account sets contain _members_ which can include accounts as well as other account sets.
+
+Every account set has multiple _balances_ which represent the sum of all balances of member accounts and member account sets. Like balances for accounts, account set balances are computed for every currency used by the entries posted to accounts in a set and all of its sub-sets.
+
+Because account sets are tied to a specific journal, they only compute balances using entries posted to their journal.
+"""
+type AccountSet {
+  "Unique identifier for the set."
+  accountSetId: UUID!
+
+  """
+  The journal for the set.
+  Account sets are confined to a single journal and roll up balances for entries on their journal. Account sets can only contain other sets using the same journal.
+  """
+  journalId: UUID!
+
+  "Name for the set."
+  name: String!
+
+  "Description of the account set."
+  description: String!
+
+  "Metadata attached to this account set."
+  metadata: JSON
+
+  """
+  Indicates whether this account set uses a "debit normal" or a "credit normal" balance.
+
+  In double-entry accounting, a debit normal balance uses the calculation `balance = debits - credits`.
+
+  A credit normal balance, in contrast, is calculated with the equation `balance = credits - debits`.
+  """
+  normalBalanceType: DebitOrCredit
+
+  "Date and time when the account set was first created."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this account set. Previous versions are tracked in `history`."
+  version: Int!
+
+  _accountId: UUID!
+  _recordId: UUID!
+
+  """
+  Reference to the balance for a specific currency (defaults to "USD").
+  """
+  balance(
+    "Currency of the balance."
+    currency: CurrencyCode! = "USD"
+  ): Balance @goField(forceResolver: true)
+
+  """
+  Reference to the balances for this account set.
+
+  Each balance reflects the current sum of debits and credits for all entries on accounts in this set and all accounts in any sub-sets, on the current layer and all layers above.
+
+  Because account sets are tied to a specific journal, they only compute balances using entries posted to their journal.
+  """
+  balances(
+    "Query conditions to filter the balances returned."
+    where: BalanceFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): BalanceConnection! @goField(forceResolver: true)
+
+  "All ledger entries associated with accounts in this set and in all subsets."
+  entries(
+    "Query conditions to filter the entries returned."
+    where: EntryFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): EntryConnection! @goField(forceResolver: true)
+
+  """
+  History of changes to this AccountSet record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): AccountSetConnection! @goField(forceResolver: true)
+
+  "All members of the account set. Sets can include other account sets."
+  members(
+    "Query conditions to filter the members returned."
+    where: AccountSetMembersFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): AccountSetMemberConnection @goField(forceResolver: true)
 }
 
-type mutations_layers_all {
-    delete(input: mutations_layers_delete): mutations_layers_delete_output
-    insert(input: mutations_layers_input): mutations_layers_insert_output
-    update(input: mutations_layers_update): mutations_layers_update_output
+"""
+Connection to a list of AccountSet nodes.
+Access AccountSet nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type AccountSetConnection implements Connection {
+  nodes: [AccountSet]!
+  edges: [AccountSetConnectionEdge]!
+  pageInfo: PageInfo!
 }
 
-type mutations_layers_insert_output {
-    record: layers
+"""
+Edges represent links connecting a parent or query field to a list of AccountSet nodes.
+They contain a reference to the AccountSet node and metadata like the `cursor` position for the edge.
+"""
+type AccountSetConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the AccountSet node at this edge."
+  node: AccountSet
 }
 
-type mutations_layers_update_output {
-    records: [layers]
+"Account set members can be of type Account or AccountSet."
+union AccountSetMember = Account | AccountSet
+
+"""
+Connection to a list of AccountSetMember nodes.
+Access AccountSetMember nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type AccountSetMemberConnection implements Connection {
+  nodes: [AccountSetMember]!
+  edges: [AccountSetMemberConnectionEdge]!
+  pageInfo: PageInfo!
 }
 
-type Mutation {
-    accounts: mutations_accounts_all
-    balances_account: mutations_balances_account_all
-    card_holders: mutations_card_holders_all
-    cards: mutations_cards_all
-    customer_accounts: mutations_customer_accounts_all
-    customers: mutations_customers_all
-    journals: mutations_journals_all
-    layers: mutations_layers_all
-    tran_codes: mutations_tran_codes_all
-    transactions: mutations_transactions_all
+"""
+Edges represent links connecting a parent or query field to a list of AccountSetMember nodes.
+They contain a reference to the AccountSetMember node and metadata like the `cursor` position for the edge.
+"""
+type AccountSetMemberConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the AccountSetMember node at this edge."
+  node: AccountSetMember
 }
 
-input mutations_balances_account_delete {
-    scope: String
-    index: balances_account_indexes
-    where: Where
-    limit: Int32 = "1000"
+"Specify the pre-defined AccountSetIndex and sort order to use in a query."
+input AccountSetIndexInput {
+  name: AccountSetIndex!
+  sort: SortOrder
 }
 
-type mutations_balances_account_insert_output {
-    record: balances_account
+"Indexes for querying AccountSets. To optimize query performance and apply desired filters, choose the appropriate index."
+enum AccountSetIndex {
+  "Index by `accountSetId` field. Must supply an `accountSetId: { eq: <id> }` filter to the `where` object."
+  ACCOUNT_SET_ID
+  "Index by `name` field. Use to apply query filters on the value of `name`."
+  NAME
+  CUSTOM
 }
 
-input mutations_cards_delete {
-    index: cards_indexes
-    where: Where
-    limit: Int32 = "1000"
-    scope: String
+"""
+Filter conditions to apply to an account set query.
+Filters are only applied if the field is used by the specified index.
+"""
+input AccountSetFilterInput {
+  "Filter on the `accountSetId` field. Required when using index `AccountSetIndex.ACCOUNT_SET_ID`."
+  accountSetId: FilterValue
+  "Specify the Journal to use with `eq`. Required for all indexes."
+  journalId: FilterValue
+  "Filter on the `name` field. Only available when using index `AccountSetIndex.NAME`."
+  name: FilterValue
+  "Filter by custom index"
+  custom: CustomIndexFilter
 }
 
-type mutations_layers_delete_output {
-    records: [layers]
+"""
+Filter conditions to apply when querying members of an account set.
+"""
+input AccountSetMembersFilterInput {
+  "Filter on the `accountSetId` field."
+  accountSetId: FilterValue
+  "Filter on the `memberId` field: the UUID of a member `Account` or `AccountSet`."
+  memberId: FilterValue
 }
 
-type mutations_card_holders_all {
-    delete(input: mutations_card_holders_delete): mutations_card_holders_delete_output
-    insert(input: mutations_card_holders_input): mutations_card_holders_insert_output
-    update(input: mutations_card_holders_update): mutations_card_holders_update_output
+"Fields to create a new account set."
+input AccountSetInput {
+  "Unique identifier for the set."
+  accountSetId: UUID!
+  "The journal for the set."
+  journalId: UUID!
+  "Name for the set."
+  name: String!
+  "Description of the account set."
+  description: String
+  "Determines whether the account set should use a debit- or credit-normal balance."
+  normalBalanceType: DebitOrCredit! = CREDIT
+  "Metadata attached to this account set."
+  metadata: JSON
 }
 
-type mutations_tran_codes_update_output {
-    records: [tran_codes]
+"AccountSet fields to update."
+input AccountSetUpdateInput {
+  "Name for the set."
+  name: String
+  "Description of the account set."
+  description: String
+  "Determines whether the account set should use a debit- or credit-normal balance."
+  normalBalanceType: DebitOrCredit
+  "Metadata attached to this account set."
+  metadata: JSON
 }
 
-type mutations_cards_update_output {
-    records: [cards]
+"Account set members can be of type Account or AccountSet."
+enum AccountSetMemberType {
+  ACCOUNT
+  ACCOUNT_SET
 }
 
-scalar Uint64
-
-type mutations_tran_codes_delete_output {
-    records: [tran_codes]
+input AccountSetMemberInput {
+  "Whether the member to add is an Account or AccountSet"
+  memberType: AccountSetMemberType
+  """
+  Identifier for the member to add.
+  When adding accounts, this is the `accountId`.
+  When adding account sets, this is the `accountSetId`.
+  """
+  memberId: UUID!
 }
 
-type mutations_transactions_update_output {
-    records: [transactions]
+extend type Mutation {
+  auth: AuthMutation!
 }
 
-input mutations_expr_accounts {
-    modified: Expression
-    status: Expression
-    account_id: Expression
-    account_type: Expression
-    created: Expression
+extend type Query {
+  auth: AuthQuery!
 }
 
-input mutations_tran_codes_input {
-    scope: String
-    document: mutations_expr_tran_codes
+
+type AuthMutation {
+  "Create a new security client."
+  createClient(input: CreateClientInput!): Client! @goField(forceResolver: true)
+
+  "Update an existing client by replacing policies."
+  updateClient(
+    "Principal of the client to update."
+    principal: String!
+    "Fields to update."
+    input: UpdateClientInput!
+  ): Client @goField(forceResolver: true)
+
+  "Name of the client to delete."
+  deleteClient("Principal to delete.", principal: String!): Client @goField(forceResolver: true)
 }
 
-type mutations_tran_codes_insert_output {
-    record: tran_codes
+type AuthQuery {
+  "Retrieve a single client by the `principal`."
+  client(
+    "principal of the client."
+    principal: String!
+  ): Client @goField(forceResolver: true)
+
+  "Lists all clients."
+  clients(
+    first: Int!
+    after: String
+  ): ClientConnection! @goField(forceResolver: true)
 }
 
-input mutations_customer_accounts_update {
-    scope: String
-    index: customer_accounts_indexes
-    where: Where
-    document: mutations_expr_customer_accounts
-    limit: Int32 = "1000"
+type ClientConnection implements Connection {
+  nodes: [Client]!
+  edges: [ClientConnectionEdge]!
+  pageInfo: PageInfo!
 }
 
-input mutations_accounts_input {
-    scope: String
-    document: mutations_expr_accounts
+type ClientConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Client node at this edge."
+  node: Client
 }
 
-type mutations_accounts_insert_output {
-    record: accounts
+input CreateClientInput {
+  """
+  Principal that this client applies to. If you're supplying your own OIDC
+  this will be the `iss` claim on your JWT.  If using Twisp IAM/OIDC token
+  exchange, this will be the IAM principal you signed with, typically a role ARN.
+  """
+  principal: String!
+
+  "Unique name of the client."
+  name: String!
+
+  "The policies to evaluate."
+  policies: [PolicyInput]!
 }
 
-input mutations_transactions_update {
-    document: mutations_expr_transactions
-    limit: Int32 = "1000"
-    scope: String
-    index: transactions_indexes
-    where: Where
+input UpdateClientInput {
+  "Replaces the existing policies with this new set of policies."
+  policies: [PolicyInput]!
 }
 
-type ReconciledTransaction {
-    reconciled: Boolean!
+type Client {
+  """
+  Principal that this client applies to. If you're supplying your own OIDC
+  this will be the `iss` claim on your JWT.  If using Twisp IAM/OIDC token
+  exchange, this will be the IAM principal you signed with, typically a role ARN.
+  """
+  principal: String!
+
+  "Unique name of the client."
+  name: String!
+
+  "The policies to evaluate."
+  policies: [Policy]!
 }
 
-type mutations_customers_update_output {
-    records: [customers]
+input PolicyInput {
+  "Whether this Policy is an `ALLOW` or `DENY`."
+  effect: PolicyEffect!
+
+  """
+  The set of actions to allow or deny.
+  """
+  actions: [PolicyAction]!
+
+  """
+  The resources to allow or deny.
+  In the format `<namespace>.<ledger>.*`
+
+  The following namespaces exist:
+  - `financial`
+  - `tenancy`
+  - `public`
+  - `system`
+
+  As do the following ledgers in the financial namespace:
+
+  - `Account`
+  - `AccountSet`
+  - `AccountSetMember`
+  - `Transaction`
+  - `Entry`
+  - `Balance`
+  - `TranCode`
+  - `Journal`
+
+  You can use `*` to wildcard as well.
+  """
+  resources: [String]!
+
+  """
+  A map of expressions to evalaute this policy with.
+  """
+  assertions: ExpressionMap
+
 }
 
-type mutations_tran_codes_all {
-    delete(input: mutations_tran_codes_delete): mutations_tran_codes_delete_output
-    insert(input: mutations_tran_codes_input): mutations_tran_codes_insert_output
-    update(input: mutations_tran_codes_update): mutations_tran_codes_update_output
+type Policy {
+  "Whether this Policy is an `ALLOW` or `DENY`."
+  effect: PolicyEffect!
+
+  """
+  The set of actions to allow or deny."
+  """
+  actions: [PolicyAction]!
+
+  """
+  The resources to allow or deny.
+  """
+  resources: [String]!
+
+  """
+  A map of expressions to evaluate this policy with.
+  """
+  assertions: ExpressionMap
 }
 
-type mutations_customers_insert_output {
-    record: customers
+type PolicyAssertion {
+  name: String!
+  value: Expression!
 }
 
-"Indexes for table layers"
-enum layers_indexes {
-    layer_id
+enum PolicyAction {
+  SELECT,
+  INSERT,
+  UPDATE,
+  DELETE
 }
 
-input mutations_layers_delete {
-    scope: String
-    index: layers_indexes
-    where: Where
-    limit: Int32 = "1000"
+enum PolicyEffect {
+  ALLOW
+  DENY
 }
 
-type mutations_card_holders_insert_output {
-    record: card_holders
+extend type Query {
+  "Get a balance for an account."
+  balance(
+    "ID of the journal for the balance."
+    journalId: UUID!
+
+    "ID of the account for the balance."
+    accountId: UUID!
+
+    "Currency of the balance."
+    currency: CurrencyCode!
+  ): Balance
+
+  "Select one or more balances. Specify the index to use and apply filters to your query."
+  balances(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: BalanceIndexInput!
+
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: BalanceFilterInput
+
+    "Number of nodes to return on the connection."
+    first: Int!
+
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): BalanceConnection!
 }
 
-type transactions {
-    account: [accounts]
-    account_id: UUID
-    amount: Int64
-    correlation_id: UUID
-    created: Timestamp
-    credit: Boolean
-    effective: Date
-    history(limit: Int32 = "1000", sort: Sort = DESC): [transactions]
-    journal: [journals]
-    journal_id: Int64
-    layer: [layers]
-    layer_id: Int64
-    operating_account: [accounts]
-    operating_account_id: UUID
-    seq: Uint64
-    tran_code: [tran_codes]
-    tran_code_id: Int64
-    transaction_id: UUID
+type BalanceAmount {
+  "Sum of all amounts for entries on the DEBIT side of the ledger."
+  drBalance: Money!
+
+  "Sum of all amounts for entries on the CREDIT side of the ledger."
+  crBalance: Money!
+
+  """
+  The "normal balance" for an account is different for credit normal and debit normal accounts.
+
+  For credit normal accounts, the normal balance is equal to `crBalance - drBalance`.
+  For debit normal accounts, the normal balance is the reverse: `drBalance - crBalance`.
+  """
+  normalBalance: Money!
+
+  "ID of the most recent entry used to calculate the balance on this layer."
+  entryId: UUID!
+
+  "Time of the last change of balance on this layer."
+  modified: Timestamp!
 }
 
-type journals {
-    created: Timestamp
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [journals]
-    journal_id: Int64
-    journal_name: String
-    modified: Timestamp
-    seq: Uint64
-    status: String
+"""
+Balances are auto-calculated sums of the entries for a given account.
+
+Every balance record maintains a `drBalance` for entries on the debit side of the ledger and a `crBalance` for credit entries.
+
+Additionally, every account has a `normalBalance`, which is equal to `crBalance - drBalance` for credit normal accounts, and `drBalance - crBalance` for debit normal accounts.
+
+Each account can have balances across all three layers: SETTLED, PENDING, and ENCUMBRANCE.
+"""
+type Balance {
+  "ID of the journal within which the balance is calculated."
+  journalId: UUID!
+
+  "ID of the account for which the balance is calculated."
+  accountId: UUID!
+
+  "ID of the most recent entry used to calculate the balance."
+  entryId: UUID!
+
+  """
+  The currency of the balance amounts.
+
+  Balances represent the sum of entries using the same currency. Multi-currency ledgers will therefore have different balances for each currency.
+  """
+  currency: CurrencyCode!
+
+  "The balance amounts on the settled layer."
+  settled: BalanceAmount!
+
+  "The balance amounts on the pending layer."
+  pending: BalanceAmount!
+
+  "The balance amounts on the encumbrance layer."
+  encumbrance: BalanceAmount!
+
+  "The balance amounts available by combining the provided layer with all layers above."
+  available(layer: Layer!): BalanceAmount! @goField(forceResolver: true)
+
+  "Date and time when the balance was first created."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this balance. Previous versions are tracked in `history`."
+  version: Int!
+
+  _direction: DebitOrCredit!
+  _recordId: UUID!
+
+  "Reference to the balance's account."
+  account: Account! @goField(forceResolver: true)
+
+  "Reference to the most recent entry used to calculate the balance."
+  entry: Entry! @goField(forceResolver: true)
+
+  "All ledger entries for this balance."
+  entries(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): EntryConnection! @goField(forceResolver: true)
+
+  "Reference to the balance's journal."
+  journal: Journal! @goField(forceResolver: true)
+
+  """
+  History of changes to this Balance record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): BalanceConnection! @goField(forceResolver: true)
 }
 
-type mutations_transactions_delete_output {
-    records: [transactions]
+"""
+Connection to a list of Balance nodes.
+Access Balance nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type BalanceConnection implements Connection {
+  nodes: [Balance]!
+  edges: [BalanceConnectionEdge]!
+  pageInfo: PageInfo!
 }
 
-input mutations_journals_delete {
-    where: Where
-    limit: Int32 = "1000"
-    scope: String
-    index: journals_indexes
+"""
+Edges represent links connecting a parent or query field to a list of Balance nodes.
+They contain a reference to the Balance node and metadata like the `cursor` position for the edge.
+"""
+type BalanceConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Balance node at this edge."
+  node: Balance
 }
 
-type mutations_balances_account_delete_output {
-    records: [balances_account]
+"Specify the pre-defined BalanceIndex and sort order to use in a query."
+input BalanceIndexInput {
+  name: BalanceIndex!
+  sort: SortOrder
 }
 
-type mutations_cards_all {
-    delete(input: mutations_cards_delete): mutations_cards_delete_output
-    insert(input: mutations_cards_input): mutations_cards_insert_output
-    update(input: mutations_cards_update): mutations_cards_update_output
+"Indexes for querying Balances. To optimize query performance and apply desired filters, choose the appropriate index."
+enum BalanceIndex {
+  "Index by `accountId` field. Must supply an `accountId: { eq: <id> }` filter to the `where` object."
+  ACCOUNT_ID
 }
 
-type cards {
-    card_active_status: String
-    card_delivery_type: String
-    card_holder_name: String
-    card_id: UUID
-    card_packaging_type: String
-    card_status: String
-    card_type: String
-    created: Timestamp
-    expiration: Date
-    history(sort: Sort = DESC, limit: Int32 = "1000"): [cards]
-    modified: Timestamp
-    pan: UUID
-    pan_last_four: String
-    pin: UUID
-    seq: Uint64
+"""
+Filter conditions to apply to a balance query.
+Filters are only applied if the field is used by the specified index.
+"""
+input BalanceFilterInput {
+  "Specify the Journal to use with `eq`. Required for all indexes."
+  journalId: FilterValue
+  "Filter on the `accountId` field. Required when using index `BalanceIndex.ACCOUNT_ID`."
+  accountId: FilterValue
+  "Filter on the `currency` field."
+  currency: FilterValue
 }
 
-"Indexes for table transactions"
-enum transactions_indexes {
-    transaction_id
-    account_id
+extend type Mutation {
+  cards: CardMutation!
 }
 
-type mutations_balances_account_all {
-    delete(input: mutations_balances_account_delete): mutations_balances_account_delete_output
-    insert(input: mutations_balances_account_input): mutations_balances_account_insert_output
-    update(input: mutations_balances_account_update): mutations_balances_account_update_output
+type CardMutation {
+  "Initialize your Twisp instance with Card Processing Transaction Codes. Returns the default settlement account."
+  initializeCardTransactionCodes(input: CardInitializeInput!): Account! @goField(forceResolver: true)
+
+  """
+  This mutation supports converting Lithic [Transaction Webhooks JSON](https://docs.lithic.com/docs/transaction-webhooks#schema) into into Twisp accounting core using our card transaction codes.
+
+  This mutation supports all lithic transaction webhook payloads, including ASA and Balance Inquiry. The general approach is to post all webhooks to Twisp, utilize the balances that come back for decisioning, and allow Twisp and Lithic to work together to track the state of the authorization/settlement cycle.
+  """
+  postLithicTransaction(input: LithicTransactionInput!): LithicTransactionBalance! @goField(forceResolver: true)
 }
 
-"The `Int32` scalar type represents non-fractional signed whole numeric values. Int32 can represent values between -(2^31) and 2^31 - 1. "
-scalar Int32
 
-"A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC 4122."
-scalar UUID
+input CardInitializeInput {
+  """
+  The unique identifier for the journal that card transactions
+  will post to by default.
+  """
+  journalId: UUID!
 
-"Indexes for table accounts"
-enum accounts_indexes {
-    account_id
+  """
+  A unique identifier to an existing settlement account that
+  card transactions will post to by default. If not provided,
+  a default card transaction account will be used as the
+  settlement account.
+  """
+  settlementAccountId: UUID
 }
 
-type mutations_accounts_update_output {
-    records: [accounts]
+input LithicTransactionInput {
+  "Unique identifier for the account this transaction will post to."
+  accountId: UUID!
+
+  """
+  The [Transaction](https://docs.lithic.com/docs/transactions)
+  webhook object from Lithic.
+  """
+  webhook: JSON!
+
+  """
+  Unique identifier for the journal this transaction applies to.
+  If not provided, defaults to the default journal that card
+  transaction codes are configured with.
+  """
+  journalId: UUID
+
+  """
+  Unique identifier of the settlement account that transactions
+  will settle from. If not provided, defaults to the default
+  card settlement account.
+  """
+  settlementAccountId: UUID
 }
 
-input mutations_customers_input {
-    document: mutations_expr_customers
-    scope: String
+type LithicTransactionBalance {
+  """
+  The transaction that Twisp posted.
+  """
+  transaction: Transaction!
+
+  """
+  The balance for the account.
+  """
+  balance: Balance!
 }
 
-input mutations_cards_input {
-    document: mutations_expr_cards
-    scope: String
+
+extend type Query {
+  "Get a single entry by its `entryId`."
+  entry("Unique identifier." id: UUID!): Entry
+
+  "Select one or more entries. Specify the index to use and apply filters to your query."
+  entries(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: EntryIndexInput!
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: EntryFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): EntryConnection
 }
+
+extend type Mutation {
+  "Update an existing ledger entry. To ensure data integrity, only a subset of fields are allowed."
+  updateEntry("Unique identifier." id: UUID!, input: EntryUpdateInput!): Entry!
+}
+
+"""
+An entry represents one side of a transaction in a ledger. In other systems, these may be called "ledger lines" or "journal entries".
+
+Entries always have an account, amount, and direction (CREDIT or DEBIT). In addition, Twisp uses the concept of "entry types" to assign every entry to a categorical type.
+
+Twisp enforces double-entry accounting, which in practice means that entries can only be entered in the context of a Transaction. Posting a transaction will create _at least 2_ ledger entries.
+"""
+type Entry {
+  "Unique identifier for the ledger entry."
+  entryId: UUID!
+
+  "Unique identifier for the transaction which posted this entry. Every entry is associated with a transaction."
+  transactionId: UUID!
+
+  "ID of the account to be debited/credited."
+  accountId: UUID!
+
+  "The journal identifier of the ledger entry."
+  journalId: UUID!
+
+  "Type code for the entry."
+  entryType: EntryType!
+
+  "The layer on which this entry is recorded (SETTLED, PENDING, or ENCUMBRANCE)."
+  layer: Layer!
+
+  "Syntactic sugar for `amount { units }`."
+  units: Decimal!
+
+  "Syntactic sugar for `amount { currency }`."
+  currency: CurrencyCode!
+
+  "Amount of the ledger entry using the currency-supported Money type."
+  amount: Money!
+
+  "The side of the ledger (DEBIT or CREDIT) this entry is posted on."
+  direction: DebitOrCredit!
+
+  """
+  The order in which this entry was posted within the context of a transaction.
+
+  This order is auto-generated at time of posting and is determined by the position of the entries posted within the transaction.
+  """
+  sequence: Int!
+
+  "Description of the ledger entry."
+  description: String!
+
+  "Date and time when the entry was posted."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this entry. Previous versions are tracked in `history`."
+  version: Int!
+
+  _recordId: UUID!
+  _balanceRecordId: UUID!
+  _balanceRecordVersion: Int!
+
+  "Reference to the account to be debited/credited."
+  account: Account! @goField(forceResolver: true)
+
+  "Reference to the resulting balance from the entry."
+  balance: Balance! @goField(forceResolver: true)
+
+  "Reference to the journal of the entry."
+  journal: Journal! @goField(forceResolver: true)
+
+  """
+  History of changes to this Entry record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): EntryConnection! @goField(forceResolver: true)
+
+  "Reference to the transaction which posted this entry."
+  transaction: Transaction! @goField(forceResolver: true)
+}
+
+"""
+Connection to a list of Entry nodes.
+Access Entry nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type EntryConnection implements Connection {
+  nodes: [Entry]!
+  edges: [EntryConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+"""
+Edges represent links connecting a parent or query field to a list of Entry nodes.
+They contain a reference to the Entry node and metadata like the `cursor` position for the edge.
+"""
+type EntryConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Entry node at this edge."
+  node: Entry
+}
+
+"Specify the pre-defined EntryIndex and sort order to use in a query."
+input EntryIndexInput {
+  name: EntryIndex!
+  sort: SortOrder
+}
+
+"Indexes for querying Entries. To optimize query performance and apply desired filters, choose the appropriate index."
+enum EntryIndex {
+  "Index by `entryId` field. Must supply an `entryId: { eq: <id> }` filter to the `where` object."
+  ENTRY_ID
+  "Index by `transactionId` field. Must supply an `transactionId: { eq: <id> }` filter to the `where` object."
+  TRANSACTION_ID
+}
+
+"""
+Filter conditions to apply to an entry query.
+Filters are only applied if the field is used by the specified index.
+"""
+input EntryFilterInput {
+  "Filter on the `entryId` field. Required when using index `EntryIndex.ENTRY_ID`."
+  entryId: FilterValue
+  # TODO: Not currently applied in any index
+  # "Specify the Journal to use with `eq`. Required for all indexes."
+  journalId: FilterValue
+  # TODO: Not currently applied in any index
+  # "Filter on the `currency` field. Only available when using index `N/A`."
+  currency: FilterValue
+  # TODO: Not currently applied in any index
+  # "Filter on the `layer` field. Only available when using index `N/A`."
+  layer: FilterValue
+  "Filter on the `transactionId` field. Required when using index `EntryIndex.TRANSACTION_ID`."
+  transactionId: FilterValue
+}
+
+"Entry fields to update."
+input EntryUpdateInput {
+  description: String
+}
+
+extend type Query {
+  "Get a single journal by its `journalId`."
+  journal("Unique identifier." id: UUID!): Journal
+
+  "Select one or more journals. Specify the index to use and apply filters to your query."
+  journals(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: JournalIndexInput!
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: JournalFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): JournalConnection!
+}
+
+extend type Mutation {
+  "Create a new journal for recording transactions in the ledger."
+  createJournal(input: JournalInput!): Journal!
+
+  "Update an existing journal. To ensure data integrity, only a subset of fields are allowed."
+  updateJournal("Unique identifier." id: UUID!, input: JournalUpdateInput!): Journal!
+
+  "Delete journal. Only allowed if there are no transactions recorded to this journal."
+  deleteJournal("Unique identifier." id: UUID!): Journal
+}
+
+"""
+Journals allow for the organizing of transactions within separate "books".
+
+In many cases, users only need a single journal. For this reason, Twisp always contains a default "General Ledger (GL)" journal.
+
+Journals can be used for a variety of functions. For example, users may create separate journals for different currencies, or product-specific journals.
+"""
+type Journal {
+  "Unique identifier for the journal."
+  journalId: UUID!
+
+  "Name for the journal."
+  name: String!
+
+  "Description of the journal."
+  description: String!
+
+  # TODO: add LOCKED status with message "To avoid rewriting accounting history, journals should never be deleted but simply marked 'LOCKED'."
+  "Operational status of the journal."
+  status: Status!
+
+  "Date and time when the journal was first created."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this journal. Previous versions are tracked in `history`."
+  version: Int!
+
+  _recordId: UUID!
+
+  """
+  History of changes to this Journal record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): JournalConnection! @goField(forceResolver: true)
+}
+
+"""
+Connection to a list of Journal nodes.
+Access Journal nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type JournalConnection implements Connection {
+  nodes: [Journal]!
+  edges: [JournalConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+"""
+Edges represent links connecting a parent or query field to a list of Journal nodes.
+They contain a reference to the Journal node and metadata like the `cursor` position for the edge.
+"""
+type JournalConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Journal node at this edge."
+  node: Journal
+}
+
+"Specify the pre-defined JournalIndex and sort order to use in a query."
+input JournalIndexInput {
+  name: JournalIndex!
+  sort: SortOrder
+}
+
+"Indexes for querying Journals. To optimize query performance and apply desired filters, choose the appropriate index."
+enum JournalIndex {
+  "Index by `JOURNAL_ID` field. Must supply a `journalId: { eq: <id> }` filter to the `where` object."
+  JOURNAL_ID
+  "Index by `name` field. Use to apply query filters on the value of `name`."
+  NAME
+  "Index by `status` field. Use to apply query filters on the value of `status`."
+  STATUS
+}
+
+"""
+Filter conditions to apply to a journal query.
+Filters are only applied if the field is used by the specified index.
+"""
+input JournalFilterInput {
+  "Filter on the `journalId` field. Required when using index `JournalIndex.JOURNAL_ID`."
+  journalId: FilterValue
+  "Filter on the `name` field. Only available when using index `JournalIndex.NAME`."
+  name: FilterValue
+  "Filter on the `status` field. Only available when using index `JournalIndex.STATUS`."
+  status: FilterValue
+}
+
+"Fields to create a new Journal."
+input JournalInput {
+  "Unique identifier for the journal."
+  journalId: UUID!
+  "Name for the journal."
+  name: String!
+  "Description of the journal."
+  description: String
+  "Operational status of the journal."
+  status: Status! = ACTIVE
+}
+
+"Journal fields to update."
+input JournalUpdateInput {
+  "Name for the journal."
+  name: String
+  "Description of the journal."
+  description: String
+  "Operational status of the journal."
+  status: Status
+}
+
+"Defines the rounding behavior when formatting units."
+enum RoundingMode {
+  "Rounds up if the next digit is > 5, otherwise rounds down."
+  HALF_DOWN
+  "Rounds up if the next digit is >= 5, otherwise rounds down."
+  HALF_UP
+  "Rounds towards 0, truncating extra digits."
+  DOWN
+  "Rounds away from 0."
+  UP
+}
+
+"Defines how to render the currency indicator."
+enum CurrencyDisplay {
+  "Show the symbol for the currency. @example('$1.23') @example('€1.23')"
+  SYMBOL
+  "Show the currency code. @example('USD') @example('EUR')"
+  CODE
+  "Don't show the code or symbol for the currency."
+  NONE
+}
+
+"""
+ISO 4217 standard three-character code indicating the currency. @example('USD') @example('CHF')
+"""
+scalar CurrencyCode
+
+"""
+Money type with multi-currency support.
+
+Monetary amounts are represented as decimal units of currency. Fields which use the Money type can be converted to a symbolic representations by specifying a MoneyFormatInput on the `formatted` field.
+
+Here is an example table showing different currencies which each have their own divisions of units represented. Japanese yen (JPY) don't have a decimal minor unit, and Bahraini dinars (BHD) use 3 minor unit decimal places. The `formatted` column uses the default values for a an `en-US` locale.
+
+| Currency | Units    | Formatted |
+|----------|----------|-----------|
+| USD      | `289.27` | $289.27   |
+| BHD      | `28.927` | 28.927 BD |
+| JPY      | `28927`  | ¥28927    |
+"""
+type Money {
+  units: Decimal!
+  currency: CurrencyCode!
+  formatted(as: MoneyFormatInput): String! @goField(forceResolver: true)
+}
+
+# TODO: remove the "required" for all fields except locale, b/c they shouldn't be required if there is truly a default value
+"""
+Formatting options for money amounts.
+"""
+input MoneyFormatInput {
+  "Locale represents a Unicode locale identifier. @example('de-DE') @example('hi-IN')"
+  locale: String!
+  "When true, whole digits will be grouped according to locale. For example, with locale `en-US` the number `1234567.89` is formatted with grouped digits as `1,234,567.89`. With other locales, these groupings may apply differently."
+  groupDigits: Boolean! = false
+  "When true, prefix the number with plus `+` symbol when the number is positive. Negative numbers are always displayed with a minus `-` symbol."
+  addPlusSign: Boolean! = false
+  "Defines the rounding behavior when the fractional units exceed the `maxDigits`."
+  roundingMode: RoundingMode! = HALF_UP
+  "Defines how to render the currency indicator."
+  currencyDisplay: CurrencyDisplay! = SYMBOL
+  "Minimum number of fractional digits. When not specified, it will use the default fractional digits for the currency. For example, USD amounts default to 2 minimum digits."
+  minDigits: Int! = 255
+  "Maximum number of fractional digits to show, which informs how rounding behavior is applied via the `roundingMode`. Defaults to 6."
+  maxDigits: Int! = 6
+}
+extend type Mutation {
+  schema: SchemaMutation!
+}
+
+extend type Query {
+  schema: SchemaQuery!
+}
+
+type SchemaMutation {
+  """
+  Create a new index on the metadata of an entity in Twisp, such as
+  account, account set, transaction or tran code.  Uses CEL expressions
+  """
+  createIndex(input: CreateIndexInput!): Index! @goField(forceResolver: true)
+
+  "Delete an existing index."
+  deleteIndex(name: String!, on: IndexOnEnum!): Index @goField(forceResolver: true)
+}
+
+type SchemaQuery {
+  "Retrieve a single index by `name`."
+  index(
+    name: String!
+    on: IndexOnEnum!
+  ): Index @goField(forceResolver: true)
+
+  "Retrieve the list of indexes ordered by `name`."
+  indexes(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): IndexConnection! @goField(forceResolver: true)
+}
+
+input CreateIndexInput {
+  "Unique identifier of this index. Typically human readable."
+  name: String!
+
+  "The entity this index applies to."
+  on: IndexOnEnum!
+
+  "Indicates if this index is unique."
+  unique: Boolean!
+
+  "The partition key that should be used for this index."
+  partition: [PartitionKeyInput]!
+
+  "The sort key to use for supporting range queries."
+  sort: [IndexKeyInput]!
+
+  """
+  A map of cel expression predicates that must evaluate to true for this
+  value to be included in the index.
+  """
+  constraints: ExpressionMap
+}
+
+"""
+
+"""
+type Index {
+  "Unique identifier of this index. Typically human readable."
+  name: String!
+
+  "The entity this index applies to."
+  on: IndexOnEnum!
+
+  "Indicates if this index is unique."
+  unique: Boolean!
+
+  "The partition key that should be used for this index."
+  partition: [PartitionKey]!
+
+  "The range key to use for query/sorting."
+  range: [IndexKey]!
+
+  """
+  A map of cel expression predicates that must evaluate to true for this
+  value to be included in the index.
+  """
+  constraints: ExpressionMap
+
+  "The current version number of this account. Previous versions are tracked in `history`."
+  version: Int!
+
+  _recordId: UUID!
+}
+
+type IndexConnection implements Connection {
+  nodes: [Index]!
+  edges: [IndexConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+type IndexConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Index node at this edge."
+  node: Index
+}
+
+input IndexKeyInput {
+  alias: String!
+  value: Expression!
+  sort: SortOrder!
+}
+
+type IndexKey {
+  alias: String!
+  value: Expression!
+  sort: SortOrder!
+}
+
+input PartitionKeyInput {
+  alias: String!
+  value: Expression!
+}
+
+type PartitionKey {
+  alias: String!
+  value: Expression!
+}
+
+enum IndexOnEnum {
+  Account,
+  AccountSet,
+  Transaction,
+  TranCode
+}
+
+input CustomIndexFilter {
+  index: String!
+  partition: CustomIndexFilterValue
+  sort: CustomIndexFilterValue
+}
+
+input CustomIndexFilterValue {
+  alias: String!
+  value: FilterValue
+}
+
+extend type Query {
+  "Get a single tran code by its `tranCodeId`."
+  tranCode("Unique identifier." id: UUID!): TranCode
+
+  "Select one or more tran codes. Specify the index to use and apply filters to your query."
+  tranCodes(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: TranCodeIndexInput!
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: TranCodeFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): TranCodeConnection
+}
+
+extend type Mutation {
+  "Create a new transaction code (tran code)."
+  createTranCode(input: TranCodeInput!): TranCode!
+
+  "Update an existing tran code. To ensure data integrity, only a subset of fields are allowed."
+  updateTranCode("Unique identifier." id: UUID!, input: TranCodeUpdateInput!): TranCode!
+
+  "Delete a tran code. Only allowed if there are no transactions using this tran code."
+  deleteTranCode("Unique identifier." id: UUID!): TranCode
+}
+
+"""
+Transaction Codes (tran codes) are how financial engineers do double-entry accounting. They encode the basic patterns for a type of transaction as a predictable and repeatable formula.
+
+You can think of tran codes as functions signatures which define how a transaction acts upon the ledger.
+"""
+type TranCode {
+  "Internal UUID for the transaction code record."
+  tranCodeId: UUID!
+
+  """
+  The tran code represented as a unique string identifier.
+
+  The code itself is a shorthand for the behavior represented. For example, the code `ACH_CREDIT` may represent a transaction writing two entries: an `ACH_DR` entry and an `ACH_CR` entry.
+  """
+  code: String!
+
+  "Explanation of what this tran code represents and how it should be used. This provides documentation for the tran code."
+  description: String!
+
+  "Defines the parameters that can be used when posting transactions using this tran code."
+  params: [ParamDefinition]
+
+  "Definition of the transaction posted when this tran code is invoked."
+  transaction: TranCodeTransaction!
+
+  "Definition of the entries written when transactions are posted with this tran code."
+  entries: [TranCodeEntry!]!
+
+  # TODO: add LOCKED status with message "To avoid rewriting accounting history, tran codes should never be deleted but simply marked 'LOCKED'."
+  "Operational status of the tran code."
+  status: Status!
+
+  "Metadata attached to this tran code."
+  metadata: JSON
+
+  "Date and time when the tran code was first created."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this account. Previous versions are tracked in `history`."
+  version: Int!
+
+  _recordId: UUID!
+
+  """
+  History of changes to this TranCode record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): TranCodeConnection! @goField(forceResolver: true)
+}
+
+"""
+Definition of a parameter that can be used when posting transactions using this tran code.
+
+These definitions are used to validate the provided `params` in a TransactionInput to ensure that only the right data is applied to the entries created.
+
+With CEL, you can access the post-time values of these parameters inside of values in `transaction` and `entries`.
+"""
+type ParamDefinition {
+  """
+  Name for the parameter.
+  This is how values passed are accessed. For example, a parameter with name `fromAccount` can be accessed in the `accountId` field of an TranCodeEntryInput with `params.fromAccount`.
+  """
+  name: String!
+  "Data type for the parameter."
+  type: ParamDataType!
+  """
+  Default value for the parameter.
+  If not provided, the parameter is consider a 'required' parameter, and a value must be provided when posting a transaction.
+  """
+  default: Expression
+  "Describe the purpose of this parameter. Help an engineer out."
+  description: String
+}
+
+"Definition of the transaction posted when this tran code is invoked."
+type TranCodeTransaction {
+  "Effective date for transactions posted with this tran code."
+  effective: Expression!
+
+  "Journal ID for transactions posted with this tran code."
+  journalId: Expression!
+
+  "Correlation ID for transactions posted with this tran code."
+  correlationId: Expression
+
+  "External ID for transactions posted with this tran code."
+  externalId: Expression
+
+  "Description for transactions posted with this tran code."
+  description: Expression!
+
+  "Metadata for transactions posted with this tran code."
+  metadata: Expression!
+}
+
+"Definition of an entry written when transactions are posted with this tran code."
+type TranCodeEntry {
+  "Entry type for an entry written when this tran code is invoked."
+  entryType: Expression!
+
+  "Account ID for an entry written when this tran code is invoked."
+  accountId: Expression!
+
+  "Layer for an entry written when this tran code is invoked."
+  layer: Expression!
+
+  "Direction for an entry written when this tran code is invoked."
+  direction: Expression!
+
+  "Units of currency for an entry written when this tran code is invoked."
+  units: Expression!
+
+  "Currency used for an entry written when this tran code is invoked."
+  currency: Expression!
+
+  "Description for an entry written when this tran code is invoked."
+  description: Expression
+}
+
+"""
+Connection to a list of TranCode nodes.
+Access TranCode nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type TranCodeConnection implements Connection {
+  nodes: [TranCode]!
+  edges: [TranCodeConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+"""
+Edges represent links connecting a parent or query field to a list of TranCode nodes.
+They contain a reference to the TranCode node and metadata like the `cursor` position for the edge.
+"""
+type TranCodeConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the TranCode node at this edge."
+  node: TranCode
+}
+
+"Specify the pre-defined TranCodeIndex and sort order to use in a query."
+input TranCodeIndexInput {
+  name: TranCodeIndex!
+  sort: SortOrder
+}
+
+"Indexes for querying TranCodes. To optimize query performance and apply desired filters, choose the appropriate index."
+enum TranCodeIndex {
+  "Index by `tranCodeId` field. Must supply a `tranCodeId: { eq: <id> }` filter to the `where` object."
+  TRAN_CODE_ID
+  "Index by `code` field. Use to apply query filters on the value of `code`."
+  CODE
+  "Index by `status` field. Use to apply query filters on the value of `status`."
+  STATUS
+  CUSTOM
+}
+
+"""
+Filter conditions to apply to a tran code query.
+Filters are only applied if the field is used by the specified index.
+"""
+input TranCodeFilterInput {
+  "Filter on the `tranCodeId` field. Required when using index `TranCodeIndex.TRAN_CODE_ID`."
+  tranCodeId: FilterValue
+  "Filter on the `code` field. Only available when using index `TranCodeIndex.CODE`."
+  code: FilterValue
+  "Filter on the `status` field. Only available when using index `TranCodeIndex.STATUS`."
+  status: FilterValue
+  "Filter by custom index"
+  custom: CustomIndexFilter
+}
+
+"Fields to create a new TranCode."
+input TranCodeInput {
+  "Internal UUID for the transaction code record."
+  tranCodeId: UUID!
+  "The tran code represented as a unique string identifier. @example('ACH_CREDIT')"
+  code: String!
+  "Explanation of what this tran code represents and how it should be used. This provides documentation for the tran code."
+  description: String
+  "Define the parameters that can be used when posting transactions using this tran code."
+  params: [ParamDefinitionInput!]
+  "Define the values for the transaction posted when this tran code is invoked."
+  transaction: TranCodeTransactionInput!
+  "Define the values of entries written when transactions are posted with this tran code."
+  entries: [TranCodeEntryInput!]!
+  "Metadata attached to this tran code."
+  metadata: JSON
+}
+
+"""
+Define a parameter that can be used when posting transactions using this tran code.
+"""
+input ParamDefinitionInput {
+  """
+  Name for the parameter.
+  This is how values passed are accessed. For example, a parameter with name `fromAccount` can be accessed in the `accountId` field of an TranCodeEntryInput with `params.fromAccount`.
+  """
+  name: String!
+  "Data type for the parameter."
+  type: ParamDataType! = STRING
+  """
+  Default value for the parameter.
+  If not provided, the parameter is consider a 'required' parameter, and a value must be provided when posting a transaction.
+  """
+  default: Expression
+  "Describe the purpose of this parameter. Help an engineer out."
+  description: String
+}
+
+"Define the values for the transaction posted when this tran code is invoked."
+input TranCodeTransactionInput {
+  """
+  Effective date for the transaction posted with this tran code.
+  Expression must be a valid ISO 8601 formatted date.
+  @example("date('2022-12-23')")
+  """
+  effective: Expression!
+
+  """
+  Journal ID for the transaction posted with this tran code.
+  Expression must resolve to a UUID type.
+  @example("uuid('b28f5684-0834-4292-8016-d2f2fb0367a9')")
+  """
+  journalId: Expression!
+
+  """
+  Correlation ID for the transaction posted with this tran code.
+  Expression must resolve to a String type.
+  @example("'5a028997'")
+  """
+  correlationId: Expression
+
+  """
+  External ID for the transaction posted with this tran code.
+  Expression must resolve to a String type.
+  @example("'45415819'")
+  """
+  externalId: Expression
+
+  """
+  Description for the transaction posted with this tran code.
+  Expression must resolve to a String type.
+  @example("'TX for ' + string(params.amount)")
+  """
+  description: Expression
+
+  """
+  Metadata for the transaction posted with this tran code.
+  Expression must resolve to a JSON type.
+  @example("{ 'x': 1, 'y': { 'z': 2 }}")
+  """
+  metadata: Expression
+}
+
+"Defines the values for the entries written when transactions are posted with this tran code."
+input TranCodeEntryInput {
+  """
+  Entry type for an entry written when this tran code is invoked.
+  Expression must resolve to a String type.
+  """
+  entryType: Expression!
+
+  """
+  Account ID for an entry written when this tran code is invoked.
+  Expression must resolve to a UUID type.
+  """
+  accountId: Expression!
+
+  """
+  Layer for an entry written when this tran code is invoked.
+  Expression must resolve to a Layer enum type.
+  """
+  layer: Expression!
+
+  """
+  Direction for an entry written when this tran code is invoked.
+  Expression must resolve to a DebitOrCredit enum type.
+  """
+  direction: Expression!
+
+  """
+  Units of currency for an entry written when this tran code is invoked.
+  Expression must resolve to a Decimal type.
+  """
+  units: Expression!
+
+  """
+  Currency used for an entry written when this tran code is invoked.
+  Expression must resolve to a CurrencyCode type.
+  """
+  currency: Expression!
+
+  """
+  Description for an entry written when this tran code is invoked."
+  Expression must resolve to a String type.
+  """
+  description: Expression
+}
+
+"TranCode fields to update."
+input TranCodeUpdateInput {
+  "Explanation of what this tran code represents and how it should be used. This provides documentation for the tran code."
+  description: String
+  "Operational status of the tran code."
+  status: Status
+  "Metadata attached to this tran code."
+  metadata: JSON
+}
+
+extend type Query {
+  "Get a single transaction by its `transactionId`."
+  transaction("Unique identifier." id: UUID!): Transaction
+
+  "Select one or more transactions. Specify the index to use and apply filters to your query."
+  transactions(
+    """
+    Select from a list of pre-defined indexes. For optimal performance, choose specific indexes on unique fields over more general ones.
+    """
+    index: TransactionIndexInput!
+    """
+    Filter the query according to specified conditions. Depending on the index chosen, different filters will be allowed.
+    """
+    where: TransactionFilterInput
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): TransactionConnection
+}
+
+extend type Mutation {
+  "Write a transaction to the ledger using the predefined defaults from the `tranCode` provided."
+  postTransaction(input: TransactionInput!): Transaction!
+
+  "Update an existing transaction. To ensure data integrity, only a subset of fields are allowed."
+  updateTransaction("Unique identifier." id: UUID!, input: TransactionUpdateInput!): Transaction!
+}
+
+"""
+Transactions record all accounting events in the ledger. In Twisp, the only way to write to a ledger is through a transaction.
+
+Every transaction writes two or more entries to the ledger in standard double-entry accounting practice.
+
+Twisp expands upon the basic principle of an accounting transaction with additional features like transaction codes and correlations.
+"""
+type Transaction {
+  "Unique identifier for the transaction."
+  transactionId: UUID!
+
+  "Unique identifier for the tran code used by this transaction."
+  tranCodeId: UUID!
+
+  "Unique identifier for the journal this transaction applies to."
+  journalId: UUID!
+
+  """
+  Allows related transactions to be grouped.
+
+  When a transaction is posted without a `correlationId`, it uses the `transactionId` as the `correlationId`. Then, future related transactions can be posted with the same `correlationId` to indicate their relationship to the original. This is very useful for events like holds, auths, auth reversals, etc.
+
+  For example, consider the following (simplified) list of transactions:
+
+  (ID: 1) Place card hold for $50 on account A (correlation ID: 1)
+  (ID: 2) Place card hold for $20 on account B (correlation ID: 2)
+  (ID: 3) Release card hold for $50 on account A (correlation ID: 1)
+
+  Because transaction (3) is _related_ to transaction (1), it shares the same correlation ID. This way, we can easily observe the entire history of a multi-transaction event by querying the correlated transactions.
+  """
+  correlationId: String!
+
+  "Allows specifying a unique external ID associated with this transaction."
+  externalId: String!
+
+  "The effective date records when the transaction is recorded as occurring for accounting purposes. Determines the accounting period within which the transaction is counted."
+  effective: Date!
+
+  "Description of the transaction."
+  description: String!
+
+  "Arbitrary structured data about this transaction."
+  metadata: JSON
+
+  "Date and time when the transaction was first posted."
+  created: Timestamp!
+
+  "Time of the last change. Especially useful when reviewing the `history`."
+  modified: Timestamp!
+
+  "The current version number of this transaction. Previous versions are tracked in `history`."
+  version: Int!
+
+  _recordId: UUID!
+
+  "List of all correlated transactions. These are transactions which share the same `correlationId`."
+  correlated(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): TransactionConnection! @goField(forceResolver: true)
+
+  "Ledger entries written by the transaction."
+  entries(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): EntryConnection! @goField(forceResolver: true)
+
+  """
+  History of changes to this Transaction record.
+  Because ledgers are immutable and append-only, all changes are recorded as sequenced versions of the record, providing an unbroken lineage of the current state.
+  """
+  history(
+    "Number of nodes to return on the connection."
+    first: Int!
+    "Cursor indicating the start point to retrieve nodes. When no cursor is provided, the query uses the default starting cursor."
+    after: String
+  ): TransactionConnection! @goField(forceResolver: true)
+
+  "Reference to the journal this transaction applies to."
+  journal: Journal! @goField(forceResolver: true)
+
+  "Reference to the tran code used by this transaction."
+  tranCode: TranCode! @goField(forceResolver: true)
+}
+
+"""
+Connection to a list of Transaction nodes.
+Access Transaction nodes directly through the `nodes` field, or access information about the connection edges with the `edges` field.
+Use `pageInfo` to paginate responses using the cursors provided.
+"""
+type TransactionConnection implements Connection {
+  nodes: [Transaction]!
+  edges: [TransactionConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+"""
+Edges represent links connecting a parent or query field to a list of Transaction nodes.
+They contain a reference to the Transaction node and metadata like the `cursor` position for the edge.
+"""
+type TransactionConnectionEdge {
+  "Cursor position at this edge."
+  cursor: String!
+  "Reference to the Transaction node at this edge."
+  node: Transaction
+}
+
+"Specify the pre-defined TransactionIndex and sort order to use in a query."
+input TransactionIndexInput {
+  name: TransactionIndex!
+  sort: SortOrder
+}
+
+"Indexes for querying Transactions. To optimize query performance and apply desired filters, choose the appropriate index."
+enum TransactionIndex {
+  "Index by `TRANSACTION_ID` field. Must supply a `transactionId: { eq: <id> }` filter to the `where` object."
+  TRANSACTION_ID
+  "Index by `CORRELATION_ID` field. Must supply a `correlationId: { eq: <id> }` filter to the `where` object."
+  CORRELATION_ID
+  "Index by `EXTERNAL_ID` field. Must supply an `externalId: { eq: <id> }` filter to the `where` object."
+  EXTERNAL_ID
+  CUSTOM
+}
+
+"""
+Filter conditions to apply to a transaction query.
+Filters are only applied if the field is used by the specified index.
+"""
+input TransactionFilterInput {
+  "Specify the Journal to use with `eq`. Required for all indexes."
+  journalId: FilterValue
+  "Filter on the `transactionId` field. Required when using index `TransactionIndex.TRANSACTION_ID`."
+  transactionId: FilterValue
+  "Filter on the `correlationId` field. Required when using index `TransactionIndex.CORRELATION_ID`."
+  correlationId: FilterValue
+  "Filter on the `externalId` field. Required when using index `TransactionIndex.EXTERNAL_ID`."
+  externalId: FilterValue
+  "Filter by custom index"
+  custom: CustomIndexFilter
+}
+
+"Fields to post a new Transaction."
+input TransactionInput {
+  "The ID is required to ensure an idempotent transaction."
+  transactionId: UUID!
+  "String corresponding to the `code` of a TranCode to be used for this transaction."
+  tranCode: String!
+  "Params object specifying values for the params defined in the corresponding TranCode."
+  params: JSON
+}
+
+"Transaction fields to update."
+input TransactionUpdateInput {
+  "Allows specifying a unique external ID associated with this transaction."
+  externalId: String
+  "Description of the transaction."
+  description: String
+  "Arbitrary structured data about this transaction."
+  metadata: JSON
+}
+
