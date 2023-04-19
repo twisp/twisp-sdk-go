@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/google/uuid"
 	"github.com/twisp/twisp-sdk-go/pkg/client"
-	"github.com/twisp/twisp-sdk-go/pkg/token"
 )
 
 var (
@@ -24,33 +23,16 @@ var (
 func main() {
 	flag.StringVar(&account, "account", "cloud", "which twisp account to use for signing.")
 	flag.StringVar(&region, "region", "us-east-2", "the aws region you're authenticating against.")
-	flag.StringVar(&customerJWT, "jwt", "", "an oidc compliant jwt you wish to use.")
 	flag.StringVar(&customerAccount, "customer-account", "", "The customer account to target")
 	flag.Parse()
 
-	var isIAM bool
 	var graphqlURL string
 
 	if customerAccount == "" {
 		handle(fmt.Errorf("customer-account is required"))
 	}
 
-	if customerJWT == "" {
-		isIAM = true
-	}
-
-	var authorization string
-	graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
-
-	if isIAM {
-		a, err := token.Exchange(account, region)
-		handle(err)
-		authorization = string(a)
-	} else {
-		authorization = customerJWT
-	}
-
-	twispHTTP := client.NewTwispHttp(authorization, customerAccount)
+	twispHTTP := client.NewTwispHttp(customerAccount, account, region)
 
 	// Check a balance
 	graphqlClient := client.NewTwispClient(graphqlURL, twispHTTP)
@@ -74,6 +56,7 @@ func main() {
 	handle(err)
 	PrintJSON(txResp)
 
+	UpdateAccountWithOptions(context.Background(), graphqlClient, uuid.New(), AccountUpdateInput{})
 }
 
 func PrintJSON(obj any) {

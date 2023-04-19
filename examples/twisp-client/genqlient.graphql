@@ -45,3 +45,18 @@ mutation PostDeposit(
     }
   }
 }
+
+# @genqlient(omitempty: true)
+# @genqlient(for: "AccountUpdateInput.code" omitempty: false)
+# @genqlient(for: "AccountUpdateInput.externalId" omitempty: false)
+mutation UpdateAccountWithOptions(
+  $id: UUID! 
+  $input: AccountUpdateInput!
+  ) {
+    updateAccount(
+      id: $id,
+      input: $input
+      ) {
+      accountId
+    }
+}

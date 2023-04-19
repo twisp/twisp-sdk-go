@@ -24,3 +24,5 @@ bindings:
     type: github.com/google/uuid.UUID
   Decimal:
     type: string
+  JSON:
+    type: map[string]any

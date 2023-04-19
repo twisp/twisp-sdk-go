@@ -10,6 +10,45 @@ import (
 	"github.com/google/uuid"
 )
 
+// Account fields to update.
+type AccountUpdateInput struct {
+	// Allows specifying a unique external ID associated with this account.
+	ExternalId string `json:"externalId"`
+	// Shorthand code for the account.
+	Code string `json:"code"`
+	// Account name.
+	Name string `json:"name,omitempty"`
+	// Determines whether account should use a debit- or credit-normal balance.
+	NormalBalanceType DebitOrCredit `json:"normalBalanceType,omitempty"`
+	// Description of the account.
+	Description string `json:"description,omitempty"`
+	// Current status for the account.
+	Status Status `json:"status,omitempty"`
+	// Metadata attached to this account.
+	Metadata map[string]any `json:"metadata,omitempty"`
+}
+
+// GetExternalId returns AccountUpdateInput.ExternalId, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetExternalId() string { return v.ExternalId }
+
+// GetCode returns AccountUpdateInput.Code, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetCode() string { return v.Code }
+
+// GetName returns AccountUpdateInput.Name, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetName() string { return v.Name }
+
+// GetNormalBalanceType returns AccountUpdateInput.NormalBalanceType, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetNormalBalanceType() DebitOrCredit { return v.NormalBalanceType }
+
+// GetDescription returns AccountUpdateInput.Description, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetDescription() string { return v.Description }
+
+// GetStatus returns AccountUpdateInput.Status, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetStatus() Status { return v.Status }
+
+// GetMetadata returns AccountUpdateInput.Metadata, and is useful for accessing the field via an interface.
+func (v *AccountUpdateInput) GetMetadata() map[string]any { return v.Metadata }
+
 // CheckAccountBalancesAccount includes the requested fields of the GraphQL type Account.
 // The GraphQL type's documentation follows.
 //
@@ -216,6 +255,42 @@ func (v *PostDepositResponse) GetPostTransaction() PostDepositPostTransaction {
 	return v.PostTransaction
 }
 
+// Record status. All records are `ACTIVE` by default.
+//
+// [NOT YET IMPLEMENTED] To avoid rewriting accounting history, most records should not be deleted but simply marked `LOCKED`, indicating that they should not be used.
+type Status string
+
+const (
+	StatusActive Status = "ACTIVE"
+)
+
+// UpdateAccountWithOptionsResponse is returned by UpdateAccountWithOptions on success.
+type UpdateAccountWithOptionsResponse struct {
+	// Update fields on an existing account. To ensure data integrity, only a subset of fields are allowed.
+	UpdateAccount UpdateAccountWithOptionsUpdateAccount `json:"updateAccount"`
+}
+
+// GetUpdateAccount returns UpdateAccountWithOptionsResponse.UpdateAccount, and is useful for accessing the field via an interface.
+func (v *UpdateAccountWithOptionsResponse) GetUpdateAccount() UpdateAccountWithOptionsUpdateAccount {
+	return v.UpdateAccount
+}
+
+// UpdateAccountWithOptionsUpdateAccount includes the requested fields of the GraphQL type Account.
+// The GraphQL type's documentation follows.
+//
+// Accounts model all of the economic activity that your ledger provides.
+//
+// The chart of accounts is the basis for creating balance sheets, P&L reports, and for understanding the balances for the customer and business entities your business services.
+//
+// Accounts can be organized into sets with the AccountSet type. Hierarchical tree structures which roll up balances across many accounts can be modeled by nesting sets within other sets.
+type UpdateAccountWithOptionsUpdateAccount struct {
+	// Unique identifier for the account.
+	AccountId uuid.UUID `json:"accountId"`
+}
+
+// GetAccountId returns UpdateAccountWithOptionsUpdateAccount.AccountId, and is useful for accessing the field via an interface.
+func (v *UpdateAccountWithOptionsUpdateAccount) GetAccountId() uuid.UUID { return v.AccountId }
+
 // __CheckAccountBalancesInput is used internally by genqlient
 type __CheckAccountBalancesInput struct {
 	AccountId uuid.UUID `json:"accountId"`
@@ -247,6 +322,18 @@ func (v *__PostDepositInput) GetAmount() string { return v.Amount }
 
 // GetEffective returns __PostDepositInput.Effective, and is useful for accessing the field via an interface.
 func (v *__PostDepositInput) GetEffective() string { return v.Effective }
+
+// __UpdateAccountWithOptionsInput is used internally by genqlient
+type __UpdateAccountWithOptionsInput struct {
+	Id    uuid.UUID          `json:"id,omitempty"`
+	Input AccountUpdateInput `json:"input,omitempty"`
+}
+
+// GetId returns __UpdateAccountWithOptionsInput.Id, and is useful for accessing the field via an interface.
+func (v *__UpdateAccountWithOptionsInput) GetId() uuid.UUID { return v.Id }
+
+// GetInput returns __UpdateAccountWithOptionsInput.Input, and is useful for accessing the field via an interface.
+func (v *__UpdateAccountWithOptionsInput) GetInput() AccountUpdateInput { return v.Input }
 
 func CheckAccountBalances(
 	ctx context.Context,
@@ -327,6 +414,40 @@ mutation PostDeposit ($transactionId: UUID!, $account: String!, $amount: String!
 	var err error
 
 	var data PostDepositResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func UpdateAccountWithOptions(
+	ctx context.Context,
+	client graphql.Client,
+	id uuid.UUID,
+	input AccountUpdateInput,
+) (*UpdateAccountWithOptionsResponse, error) {
+	req := &graphql.Request{
+		OpName: "UpdateAccountWithOptions",
+		Query: `
+mutation UpdateAccountWithOptions ($id: UUID!, $input: AccountUpdateInput!) {
+	updateAccount(id: $id, input: $input) {
+		accountId
+	}
+}
+`,
+		Variables: &__UpdateAccountWithOptionsInput{
+			Id:    id,
+			Input: input,
+		},
+	}
+	var err error
+
+	var data UpdateAccountWithOptionsResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

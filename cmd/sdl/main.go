@@ -11,7 +11,6 @@ import (
 	"os"
 
 	"github.com/twisp/twisp-sdk-go/pkg/client"
-	"github.com/twisp/twisp-sdk-go/pkg/token"
 )
 
 var (
@@ -27,36 +26,19 @@ func main() {
 
 	flag.StringVar(&account, "account", "cloud", "which twisp account to use for signing.")
 	flag.StringVar(&region, "region", "us-east-2", "the aws region you're authenticating against.")
-	flag.StringVar(&customerJWT, "jwt", "", "an oidc compliant jwt you wish to use.")
 	flag.StringVar(&customerAccount, "customer-account", "", "the customer account id.")
 
 	flag.StringVar(&schemaOut, "schema-out", "", "the location to put the file. If not specified, printed on stdout")
 	flag.Parse()
 
-	var isIAM bool
 	var graphqlURL string
 
 	if customerAccount == "" {
 		handle(fmt.Errorf("customer-account is required"))
 	}
 
-	if customerJWT == "" {
-		isIAM = true
-	}
-
 	graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
-
-	var authorization = []byte{}
-
-	if isIAM {
-		var err error
-		authorization, err = token.Exchange(account, region)
-		handle(err)
-	} else {
-		authorization = []byte(customerJWT)
-	}
-
-	c = client.NewTwispHttp(string(authorization), customerAccount)
+	c = client.NewTwispHttp(customerAccount, account, region)
 
 	q := Query{
 		Query:         `{ _service { sdl } }`,
@@ -71,8 +53,6 @@ func main() {
 	handle(err)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", string(authorization)))
-	req.Header.Add("x-twisp-account-id", customerAccount)
 
 	resp, err := c.Do(req)
 	handle(err)
@@ -82,7 +62,7 @@ func main() {
 	handle(err)
 
 	if resp.StatusCode/100 != 2 {
-		handle(fmt.Errorf("introspection got response %s %s %d %s", string(authorization), req.URL.String(), resp.StatusCode, string(body)))
+		handle(fmt.Errorf("introspection got response %s %d %s", req.URL.String(), resp.StatusCode, string(body)))
 	}
 
 	var bodyJSON map[string]any
