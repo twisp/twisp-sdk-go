@@ -27,6 +27,7 @@ func NewTwispRoundTripper(customerAccount, twispEnvironment, region string, now 
 		region:           region,
 		now:              now,
 		expire:           Expired,
+		single:           new(singleflight.Group),
 		auth:             []byte{},
 		wrapped:          http.DefaultTransport,
 	}
