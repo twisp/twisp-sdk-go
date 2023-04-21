@@ -27,6 +27,7 @@ func main() {
 	flag.Parse()
 
 	var graphqlURL string
+	graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
 
 	if customerAccount == "" {
 		handle(fmt.Errorf("customer-account is required"))

@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/imdario/mergo"
@@ -19,13 +20,12 @@ var (
 	Expired = time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
 
-func NewTwispRoundTripper(awsAccount, twispEnvironment, region string, now Now) http.RoundTripper {
+func NewTwispRoundTripper(customerAccount, twispEnvironment, region string, now Now) http.RoundTripper {
 	return &roundTripper{
-		awsAccount:       awsAccount,
+		customerAccount:  customerAccount,
 		twispEnvironment: twispEnvironment,
 		region:           region,
 		now:              now,
-		m:                &sync.RWMutex{},
 		expire:           Expired,
 		auth:             []byte{},
 		wrapped:          http.DefaultTransport,
@@ -33,14 +33,15 @@ func NewTwispRoundTripper(awsAccount, twispEnvironment, region string, now Now) 
 }
 
 type roundTripper struct {
-	awsAccount       string
+	customerAccount  string
 	twispEnvironment string
 	region           string
 
 	now    func() time.Time
 	auth   []byte
 	expire time.Time
-	m      *sync.RWMutex
+
+	single *singleflight.Group
 
 	wrapped http.RoundTripper
 }
@@ -52,7 +53,7 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", string(jwt)))
-	req.Header.Set("X-Twisp-Account-Id", r.awsAccount)
+	req.Header.Set("X-Twisp-Account-Id", r.customerAccount)
 
 	return r.wrapped.RoundTrip(req)
 }
@@ -61,29 +62,35 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 // The OIDC token is cached until it expires.
 func (t *roundTripper) authorization() ([]byte, error) {
 	// Read cached version
-	t.m.RLock()
 	if len(t.auth) > 0 && t.now().Before(t.expire) {
 		return t.auth, nil
 	}
-	t.m.RUnlock()
 
-	// We need to get a new token. Take write lock.
-	t.m.Lock()
-	defer t.m.Unlock()
+	// We need to get a new token.
+	auth, err, _ := t.single.Do("authorization", func() (any, error) {
+		// Double check
+		if len(t.auth) > 0 && t.now().Before(t.expire) {
+			return t.auth, nil
+		}
 
-	b, err := token.Exchange(t.twispEnvironment, t.region)
+		b, err := token.Exchange(t.twispEnvironment, t.region)
+		if err != nil {
+			return nil, err
+		}
+		exp, err := extractExpire(string(b))
+		if err != nil {
+			return nil, err
+		}
+
+		t.auth = b
+		t.expire = exp
+		return b, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	exp, err := extractExpire(string(b))
-	if err != nil {
-		return nil, err
-	}
 
-	t.auth = b
-	t.expire = exp
-
-	return t.auth, nil
+	return auth.([]byte), nil
 }
 
 // extractExpire extracts the exp claim from the jwt and returns it.
@@ -117,11 +124,11 @@ type Now func() time.Time
 func NewTwispHttp(customerAccount, twispEnvironment, region string) *http.Client {
 	httpClient := http.Client{
 		Transport: &roundTripper{
-			awsAccount:       customerAccount,
+			customerAccount:  customerAccount,
 			twispEnvironment: twispEnvironment,
 			region:           region,
 			now:              time.Now,
-			m:                &sync.RWMutex{},
+			single:           new(singleflight.Group),
 			expire:           Expired,
 			auth:             []byte{},
 			wrapped:          http.DefaultTransport,
