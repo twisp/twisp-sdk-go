@@ -340,7 +340,7 @@ func CheckAccountBalances(
 	client graphql.Client,
 	accountId uuid.UUID,
 	journalId uuid.UUID,
-) (*CheckAccountBalancesResponse, error) {
+) (*CheckAccountBalancesResponse, map[string]interface{}, error) {
 	req := &graphql.Request{
 		OpName: "CheckAccountBalances",
 		Query: `
@@ -373,7 +373,7 @@ query CheckAccountBalances ($accountId: UUID!, $journalId: UUID!) {
 		resp,
 	)
 
-	return &data, err
+	return &data, resp.Extensions, err
 }
 
 func PostDeposit(
@@ -383,7 +383,7 @@ func PostDeposit(
 	account string,
 	amount string,
 	effective string,
-) (*PostDepositResponse, error) {
+) (*PostDepositResponse, map[string]interface{}, error) {
 	req := &graphql.Request{
 		OpName: "PostDeposit",
 		Query: `
@@ -422,7 +422,7 @@ mutation PostDeposit ($transactionId: UUID!, $account: String!, $amount: String!
 		resp,
 	)
 
-	return &data, err
+	return &data, resp.Extensions, err
 }
 
 func UpdateAccountWithOptions(
@@ -430,7 +430,7 @@ func UpdateAccountWithOptions(
 	client graphql.Client,
 	id uuid.UUID,
 	input AccountUpdateInput,
-) (*UpdateAccountWithOptionsResponse, error) {
+) (*UpdateAccountWithOptionsResponse, map[string]interface{}, error) {
 	req := &graphql.Request{
 		OpName: "UpdateAccountWithOptions",
 		Query: `
@@ -456,5 +456,5 @@ mutation UpdateAccountWithOptions ($id: UUID!, $input: AccountUpdateInput!) {
 		resp,
 	)
 
-	return &data, err
+	return &data, resp.Extensions, err
 }

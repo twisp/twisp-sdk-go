@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/google/uuid"
@@ -20,24 +21,32 @@ var (
 	customerAccount = ""
 )
 
+type rtWithBilling struct {
+	inner http.RoundTripper
+}
+
+func (r *rtWithBilling) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("X-Twisp-Include-Billing", "true")
+	return r.inner.RoundTrip(req)
+}
+
 func main() {
 	flag.StringVar(&account, "account", "cloud", "which twisp account to use for signing.")
 	flag.StringVar(&region, "region", "us-east-2", "the aws region you're authenticating against.")
 	flag.StringVar(&customerAccount, "customer-account", "", "The customer account to target")
 	flag.Parse()
 
-	var graphqlURL string
-	graphqlURL = fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
+	graphqlURL := fmt.Sprintf("https://api.%s.%s.twisp.com/financial/v1/graphql", region, account)
 
 	if customerAccount == "" {
 		handle(fmt.Errorf("customer-account is required"))
 	}
 
-	twispHTTP := client.NewTwispHttp(customerAccount, account, region)
+	twispHTTP := client.NewTwispHttpWithRoundTripper(customerAccount, account, region, &rtWithBilling{inner: http.DefaultTransport})
 
 	// Check a balance
 	graphqlClient := client.NewTwispClient(graphqlURL, twispHTTP)
-	resp, err := CheckAccountBalances(
+	resp, extBalances, err := CheckAccountBalances(
 		context.Background(),
 		graphqlClient,
 		uuid.MustParse("1fd1dd3e-33fe-4ef5-9d58-676ef8d306b5"),
@@ -45,8 +54,9 @@ func main() {
 	)
 	handle(err)
 	PrintJSON(resp)
+	PrintJSON(extBalances)
 
-	txResp, err := PostDeposit(
+	txResp, extDeposit, err := PostDeposit(
 		context.Background(),
 		graphqlClient,
 		uuid.Must(uuid.NewRandom()),
@@ -56,6 +66,7 @@ func main() {
 	)
 	handle(err)
 	PrintJSON(txResp)
+	PrintJSON(extDeposit)
 
 	UpdateAccountWithOptions(context.Background(), graphqlClient, uuid.New(), AccountUpdateInput{})
 }

@@ -20,7 +20,11 @@ var (
 	Expired = time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
 
-func NewTwispRoundTripper(customerAccount, twispEnvironment, region string, now Now) http.RoundTripper {
+func NewTwispRoundTripper(customerAccount, twispEnvironment, region string, now Now, transport http.RoundTripper) http.RoundTripper {
+	rt := transport
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
 	return &roundTripper{
 		customerAccount:  customerAccount,
 		twispEnvironment: twispEnvironment,
@@ -29,7 +33,7 @@ func NewTwispRoundTripper(customerAccount, twispEnvironment, region string, now 
 		expire:           Expired,
 		single:           new(singleflight.Group),
 		auth:             []byte{},
-		wrapped:          http.DefaultTransport,
+		wrapped:          rt,
 	}
 }
 
@@ -50,7 +54,6 @@ type roundTripper struct {
 func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	jwt, err := r.authorization()
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", string(jwt)))
@@ -124,16 +127,15 @@ type Now func() time.Time
 // example: NewTwispHttp("Twisp1234", "cloud", "us-east-1")
 func NewTwispHttp(customerAccount, twispEnvironment, region string) *http.Client {
 	httpClient := http.Client{
-		Transport: &roundTripper{
-			customerAccount:  customerAccount,
-			twispEnvironment: twispEnvironment,
-			region:           region,
-			now:              time.Now,
-			single:           new(singleflight.Group),
-			expire:           Expired,
-			auth:             []byte{},
-			wrapped:          http.DefaultTransport,
-		},
+		Transport: NewTwispRoundTripper(customerAccount, twispEnvironment, region, time.Now, nil),
+	}
+
+	return &httpClient
+}
+
+func NewTwispHttpWithRoundTripper(customerAccount, twispEnvironment, region string, transport http.RoundTripper) *http.Client {
+	httpClient := http.Client{
+		Transport: NewTwispRoundTripper(customerAccount, twispEnvironment, region, time.Now, transport),
 	}
 
 	return &httpClient
